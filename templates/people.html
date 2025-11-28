@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %} People Index {% endblock title %}
+{% block content %}
+<h2>People Index</h2>
+<table class="bordered-centered-table">
+<tr><th>ID</th><th>Name</th></tr>
+{% for person in people %}<tr><td>{{ person.get_gramps_id() }}</td><td><a href="/person/{{ person.get_gramps_id() }}.html">{{ person.get_primary_name().get_name() }}</a></td></tr>
+{% endfor %}
+
+</table>
+{% endblock content %}

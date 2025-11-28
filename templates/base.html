@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>{% block title %}Genealogy Site{% endblock title %}</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div data-nosnippet class="navbar">
+        <nav>
+        <a href="/home.html" class="navlink">home</a>
+        • <a href="/people.html" class="navlink">people</a>
+        </nav>
+        </div>
+    </header>
+{% block content %}
+    <p>(no page content)</p>
+{% endblock content %}
+</body>
+</html>
