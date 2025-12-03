@@ -1,7 +1,26 @@
 {% extends "base.html" %}
-{% block title %} Someone {% endblock title %}
+{% block title %} {{ person.display_name }} {% endblock title %}
 {% block content %}
-<h2>A Person</h2>
-<p>Their ID is: {{ person_id }}</p>
+<h2>{{ person.display_name }}</h2>
+<h4>Biographical Information</h4>
+<p>Their ID is: {{ person.gramps_id }}</p>
+<p>Gender, birth date, age?, death date, ...</p>
+
+<h4>Names</h4>
+<p>A list.</p>
+
+<h4>Relatives</h4>
+<p>Parents + siblings. Partners + children. Have some sorta line making the children look like child nodes in tree. Consider what to do for adopted family (only one known case).</p>
+
+<p>And beside each individual, show at least their birth/death dates and gender.</p>
+
+<h4>Events</h4>
+<p>Birth, death, marriage.</p>
+
+<h4>Description</h4>
+<p>Use description attribute.</p>
+
+<h4>Citations</h4>
+<p>Maybe not its own section, maybe just... separated by a bar.</p>
 
 {% endblock content %}

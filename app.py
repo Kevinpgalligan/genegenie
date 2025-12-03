@@ -1,11 +1,18 @@
 import argparse
 from pathlib import Path
 import sys
+from dataclasses import dataclass
 
 from flask import Flask, render_template
 from gramps.gen.dbstate import DbState
 from gramps.gen.lib import Person
 from gramps.gen.db.utils import make_database
+
+@dataclass
+class PersonInfo:
+    display_name: str
+    listing_name: str
+    gramps_id: str
 
 app = Flask(__name__)
 
@@ -21,19 +28,36 @@ def set_db_path(path: Path):
 def get_people():
     global people
     if people is None:
-        people = sorted(load_people(), key=get_person_name)
+        people = sorted(load_people(),
+                        key=lambda person: person.listing_name)
         print("Loaded", len(people), "people")
     return people
 
-def get_person_name(person):
-    return person.get_primary_name().get_name()
+def extract_display_name(person):
+    prim_name = person.get_primary_name()
+    parts = []
+    title = prim_name.get_title()
+    if title:
+        parts.append(title)
+    parts.append(prim_name.get_first_name())
+    nick = prim_name.get_nick_name()
+    if nick:
+        parts.append("\"")
+        parts.append(nick)
+        parts.append("\"")
+    parts.append(prim_name.get_surname())
+    return " ".join(parts)
 
 def load_people():
     global state
     init_db()
-    return [Person(person_data) 
-            for handle, person_data
-            in state.db.get_person_cursor()]
+    gramps_persons = [Person(person_data) 
+        for handle, person_data
+        in state.db.get_person_cursor()]
+    return [PersonInfo(extract_display_name(person),
+                       person.get_primary_name().get_name(),
+                       person.get_gramps_id())
+            for person in gramps_persons]
 
 def init_db():
     global db_path, state, db_ready
@@ -62,7 +86,11 @@ def people_page():
 
 @app.route("/person/<person_id>.html")
 def person_page(person_id):
-    return render_template("person.html", person_id=person_id)
+    person = next((p
+                   for p in get_people()
+                   if p.gramps_id == person_id),
+                  None)
+    return render_template("person.html", person=person)
 
 def main():
     parser = argparse.ArgumentParser()
