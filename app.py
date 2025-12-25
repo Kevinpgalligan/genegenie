@@ -17,21 +17,57 @@ class PersonInfo:
 app = Flask(__name__)
 
 people = None
-db_path = None
-state = None
-db_ready = False
-
-def set_db_path(path: Path):
-    global db_path
-    db_path = path
 
 def get_people():
     global people
-    if people is None:
-        people = sorted(load_people(),
-                        key=lambda person: person.listing_name)
-        print("Loaded", len(people), "people")
     return people
+
+def load_db_data(path: Path):
+    global people
+
+    state = DbState()
+    # Hardcoded to sqlite, but in earlier versions of Gramps this
+    # could be bsddb (or something). The database ID should be in
+    # a text file in the tree's grampsdb folder.
+    state.change_database(make_database("sqlite"))
+    def dummy_callback(v): pass
+    state.db.load(path, dummy_callback, "r")
+
+    people = sorted(load_people(state.db),
+                    key=lambda person: person.listing_name)
+    print("Loaded", len(people), "people")
+
+    state.get_database().close()
+
+def load_people(gramps_db):
+    gramps_persons = [
+        Person(person_data) 
+        for handle, person_data
+        in gramps_db.get_person_cursor()]
+    print(gramps_persons[0].birth_ref_index)
+    print(gramps_persons[0].death_ref_index)
+    print(gramps_persons[0].event_ref_list)
+    print(vars(gramps_persons[0].event_ref_list[0]))
+    ev = gramps_db.get_event_from_handle(gramps_persons[0].event_ref_list[0].ref)
+    print("Event stuff:", ev.type, type(ev.type), repr(str(ev.type)))
+    print("Event date:", ev.date, type(ev.date))
+    print("Date vars:", vars(ev.date))
+    
+    print("ALL THE DATES:")
+    for perp in gramps_persons:
+        if perp.event_ref_list:
+            ev = gramps_db.get_event_from_handle(perp.event_ref_list[0].ref)
+            # Need to figure out how to turn the modifier from a number into something understandable.
+            # Useful comment from Gramps codebase...
+            #   "ui_mods taken from date.py def lookup_modifier(self, modifier):"
+            # And then, in date.py, the following code...
+            #   "elif self.date1.get_modifier() == Date.MOD_ABOUT:"
+            print("   ", vars(ev.date), ev.date.modifier)
+
+    return [PersonInfo(extract_display_name(person),
+                       person.get_primary_name().get_name(),
+                       person.get_gramps_id())
+            for person in gramps_persons]
 
 def extract_display_name(person):
     prim_name = person.get_primary_name()
@@ -47,33 +83,6 @@ def extract_display_name(person):
         parts.append("\"")
     parts.append(prim_name.get_surname())
     return " ".join(parts)
-
-def load_people():
-    global state
-    init_db()
-    gramps_persons = [Person(person_data) 
-        for handle, person_data
-        in state.db.get_person_cursor()]
-    return [PersonInfo(extract_display_name(person),
-                       person.get_primary_name().get_name(),
-                       person.get_gramps_id())
-            for person in gramps_persons]
-
-def init_db():
-    global db_path, state, db_ready
-    if not state:
-        state = DbState()
-    if not db_ready:
-        state.change_database(make_database("sqlite"))
-        def dummy_callback(v): pass
-        state.db.load(db_path, dummy_callback, "r")
-        db_ready = True
-        print("Database loaded successfully from", db_path)
-    
-def close_db():
-    global state
-    if state and db_ready:
-        state.get_database().close()
 
 @app.route("/")
 @app.route("/home.html")
@@ -105,10 +114,14 @@ def main():
         if not dbpath.exists():
             print("Invalid path to grampsdb:", dbpath, file=sys.stderr)
             sys.exit(1)
-        set_db_path(dbpath)
+        load_db_data(dbpath)
+        print("Loaded Gramps data from", dbpath)
+    else:
+        global people
+        people = [PersonInfo("display1", "listing1", "I001"),
+                  PersonInfo("display2", "listing2", "I002")]
 
-    app.run(port=8000)
-    close_db()
+    #app.run(port=8000)
 
 if __name__ == "__main__":
     main()

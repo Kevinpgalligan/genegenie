@@ -9,24 +9,6 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Fix flaky close. Still not sure why this is happening. I think... just load everything up-front and try to close it immediately. Maybe the process somehow forks and a new thread takes over the main process? I dunno.
-```
-^CTraceback (most recent call last):
-  File "/home/kg/proj/genegenie/app.py", line 82, in <module>
-    app.run(port=8000)
-  File "/home/kg/proj/genegenie/app.py", line 79, in main
-    sys.exit(1)
-  File "/home/kg/proj/genegenie/app.py", line 52, in close_db
-    state.get_database().close()
-  File "/usr/lib/python3/dist-packages/gramps/gen/db/generic.py", line 739, in close
-    self._close()
-  File "/usr/lib/python3/dist-packages/gramps/plugins/db/dbapi/dbapi.py", line 199, in _close
-    self.dbapi.close()
-  File "/usr/lib/python3/dist-packages/gramps/plugins/db/dbapi/sqlite.py", line 190, in close
-    self.__connection.close()
-sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 139822815704640 and this is thread id 139822887157760.
-```
-* Styling: bigger text, higher contrast link colour.
 * More columns in People page, e.g. birth date, death date, ... (check Gramps's People tab). Also, include stats like total people & unique surnames.
 * Fill out the Person page.
 * Sources page? Events page? Tree browser?

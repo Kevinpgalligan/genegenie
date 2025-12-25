@@ -3,7 +3,7 @@ html {
 }
 
 body {
-    font-family: 'Courier New', monospace;
+    font-family: "Georgia", serif;
     line-height: 1.5;
     max-width: 600px;
     padding-left: 10px;
@@ -14,11 +14,11 @@ body {
 }
 
 a {
-    color: blue;
+    color: #00c;
 }
 
 a:hover {
-    color: #2c7cc9;
+    color: #999;
 }
 
 header {
