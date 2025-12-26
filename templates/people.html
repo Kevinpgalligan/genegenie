@@ -3,8 +3,8 @@
 {% block content %}
 <h2>People Index</h2>
 <table class="bordered-centered-table">
-<tr><th>ID</th><th>Name</th></tr>
-{% for person in people %}<tr><td>{{ person.gramps_id }}</td><td><a href="/person/{{ person.gramps_id }}.html">{{ person.listing_name }}</a></td></tr>
+<tr><th>ID</th><th>Name</th><th>Birth</th><th>Death</th></tr>
+{% for person in people %}<tr><td>{{ person.gramps_id }}</td><td><a href="/person/{{ person.gramps_id }}.html">{{ person.listing_name }}</a></td><td>{{ person.birth_date_display }}</td><td>{{ person.death_date_display }}</td></tr>
 {% endfor %}
 
 </table>

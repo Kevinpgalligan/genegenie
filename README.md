@@ -9,7 +9,14 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* More columns in People page, e.g. birth date, death date, ... (check Gramps's People tab). Also, include stats like total people & unique surnames.
+* Fix 0000-00-00 death date, I0148.
+* Improve date display.
+  `-> Just print year when months & days are 0s.
+  `-> "~" instead of "abt"
+  `-> figure out difference between "est" and "abt"
+  `-> how to do ranges?
+  `-> maybe distinguish dead & unknown death date from not dead?
+      ? for dead & unknown, - for not dead (or maybe not dead)
+* Stats like total people & unique surnames.
 * Fill out the Person page.
 * Sources page? Events page? Tree browser?
-* Make it look nicer.

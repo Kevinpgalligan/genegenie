@@ -2,17 +2,24 @@ import argparse
 from pathlib import Path
 import sys
 from dataclasses import dataclass
+from enum import Enum
+from typing import Optional
 
 from flask import Flask, render_template
 from gramps.gen.dbstate import DbState
 from gramps.gen.lib import Person
 from gramps.gen.db.utils import make_database
+from gramps.gen.lib.date import Date
 
 @dataclass
 class PersonInfo:
     display_name: str
     listing_name: str
     gramps_id: str
+    birth_date: Optional[Date]
+    birth_date_display: str
+    death_date: Optional[Date]
+    death_date_display: str
 
 app = Flask(__name__)
 
@@ -27,8 +34,8 @@ def load_db_data(path: Path):
 
     state = DbState()
     # Hardcoded to sqlite, but in earlier versions of Gramps this
-    # could be bsddb (or something). The database ID should be in
-    # a text file in the tree's grampsdb folder.
+    # could be bsddb (or something). If needed, the database ID is
+    # saved in a text file in the tree's grampsdb folder.
     state.change_database(make_database("sqlite"))
     def dummy_callback(v): pass
     state.db.load(path, dummy_callback, "r")
@@ -44,6 +51,8 @@ def load_people(gramps_db):
         Person(person_data) 
         for handle, person_data
         in gramps_db.get_person_cursor()]
+
+    """
     print(gramps_persons[0].birth_ref_index)
     print(gramps_persons[0].death_ref_index)
     print(gramps_persons[0].event_ref_list)
@@ -62,12 +71,34 @@ def load_people(gramps_db):
             #   "ui_mods taken from date.py def lookup_modifier(self, modifier):"
             # And then, in date.py, the following code...
             #   "elif self.date1.get_modifier() == Date.MOD_ABOUT:"
-            print("   ", vars(ev.date), ev.date.modifier)
+            print("   ", vars(ev.date))
+            print("   ", str(ev.date))
+    """
 
-    return [PersonInfo(extract_display_name(person),
-                       person.get_primary_name().get_name(),
-                       person.get_gramps_id())
+    return [make_person_info(person, gramps_db)
             for person in gramps_persons]
+
+def make_person_info(person, gramps_db):
+    birth_date = get_event_date(person, person.birth_ref_index, gramps_db)
+    death_date = get_event_date(person, person.death_ref_index, gramps_db)
+    return PersonInfo(extract_display_name(person),
+                      person.get_primary_name().get_name(),
+                      person.get_gramps_id(),
+                      birth_date,
+                      format_date(birth_date),
+                      death_date,
+                      format_date(death_date))
+
+def get_event_date(person, index, gramps_db):
+    if index < 0:
+        return None
+    event = gramps_db.get_event_from_handle(person.event_ref_list[index].ref)
+    return event.date
+
+def format_date(d):
+    if d is None:
+        return "-"
+    return str(d)
 
 def extract_display_name(person):
     prim_name = person.get_primary_name()
@@ -121,7 +152,7 @@ def main():
         people = [PersonInfo("display1", "listing1", "I001"),
                   PersonInfo("display2", "listing2", "I002")]
 
-    #app.run(port=8000)
+    app.run(port=8000)
 
 if __name__ == "__main__":
     main()
