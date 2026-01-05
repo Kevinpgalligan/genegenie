@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block title %} {{ person.display_name }} {% endblock title %}
 {% block content %}
-<h2>{{ person.display_name }}</h2>
+<h2>{{ person.display_name }} ({{ person.gramps_id }})</h2>
 <h4>Biographical Information</h4>
-<p>Their ID is: {{ person.gramps_id }}</p>
-<p>Gender, birth date, age?, death date, ...</p>
+<table><tr><td>Gender</td><td>{{ format_gender(person.gender) }}</td></tr>
+<tr><td>Birth</td><td>{{ format_date(person.birth_date) }}</td></tr>
+<tr><td>Death</td><td>{{ format_date(person.death_date) }}</td></tr>
+</table>
 
 <h4>Names</h4>
 <p>A list.</p>
