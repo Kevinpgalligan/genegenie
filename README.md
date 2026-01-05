@@ -9,14 +9,8 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Fix 0000-00-00 death date, I0148.
-* Improve date display.
-  `-> Just print year when months & days are 0s.
-  `-> "~" instead of "abt"
-  `-> figure out difference between "est" and "abt"
-  `-> how to do ranges?
-  `-> maybe distinguish dead & unknown death date from not dead?
-      ? for dead & unknown, - for not dead (or maybe not dead)
-* Stats like total people & unique surnames.
 * Fill out the Person page.
 * Sources page? Events page? Tree browser?
+* In the people list: distinguish between people who aren't dead (or who may not be dead), and people we know are definitely dead but whose death dates we don't know.
+* Generation number, to display in events page. Makes it clearer how old people are.
+* Stats like total people & unique surnames.
