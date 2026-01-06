@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from flask import Flask, render_template
 from gramps.gen.dbstate import DbState
@@ -16,6 +16,25 @@ class Gender(Enum):
     FEMALE = 2
     OTHER = 2
 
+class SourceType(Enum):
+    # Someone's recollections, from talking to them.
+    RECOLLECTIONS = 1
+    # Primary source, e.g. birth cert.
+    PRIMARY = 2
+    # Another family tree or genealogical document.
+    TREE = 3
+    # Website or web database.
+    WEB = 4
+    # Only for mistakes.
+    UNKNOWN = 5
+
+def parse_source_type(name: str) -> SourceType:
+    try:
+        return SourceType[name.upper()]
+    except:
+        # Should only throw when it's an unknown source type. Ugly tho.
+        return SourceType.UNKNOWN
+
 @dataclass
 class PersonInfo:
     display_name: str
@@ -24,6 +43,14 @@ class PersonInfo:
     birth_date: Optional[Date]
     death_date: Optional[Date]
     gender: Gender
+    bio_sources: List[Source]
+
+@dataclass
+class Source:
+    title: str
+    gramps_id: str
+    description: str
+    source_type: SourceType
 
 def format_date(d: Optional[Date]):
     if d is None:
@@ -84,6 +111,7 @@ app.jinja_env.globals.update(
     format_gender=format_gender)
 
 people = None
+sources_map = {}
 
 def get_people():
     global people
@@ -112,29 +140,6 @@ def load_people(gramps_db):
         for handle, person_data
         in gramps_db.get_person_cursor()]
 
-    """
-    print(gramps_persons[0].birth_ref_index)
-    print(gramps_persons[0].death_ref_index)
-    print(gramps_persons[0].event_ref_list)
-    print(vars(gramps_persons[0].event_ref_list[0]))
-    ev = gramps_db.get_event_from_handle(gramps_persons[0].event_ref_list[0].ref)
-    print("Event stuff:", ev.type, type(ev.type), repr(str(ev.type)))
-    print("Event date:", ev.date, type(ev.date))
-    print("Date vars:", vars(ev.date))
-    
-    print("ALL THE DATES:")
-    for perp in gramps_persons:
-        if perp.event_ref_list:
-            ev = gramps_db.get_event_from_handle(perp.event_ref_list[0].ref)
-            # Need to figure out how to turn the modifier from a number into something understandable.
-            # Useful comment from Gramps codebase...
-            #   "ui_mods taken from date.py def lookup_modifier(self, modifier):"
-            # And then, in date.py, the following code...
-            #   "elif self.date1.get_modifier() == Date.MOD_ABOUT:"
-            print("   ", vars(ev.date))
-            print("   ", str(ev.date))
-    """
-
     return [make_person_info(person, gramps_db)
             for person in gramps_persons]
 
@@ -146,7 +151,42 @@ def make_person_info(person, gramps_db):
                       person.get_gramps_id(),
                       birth_date,
                       death_date,
-                      extract_gender(person))
+                      extract_gender(person),
+                      get_bio_sources(person, gramps_db))
+
+def get_bio_sources(person, gramps_db) -> List[Source]:
+    sources = []
+    for cite_handle in person.citation_list:
+        cite = gramps_db.get_citation_from_handle(cite_handle)
+        src_obj = gramps_db.get_source_from_handle(cite.source_handle)
+        src = make_source(src_obj, gramps_db)
+        if src not in sources:
+            sources.append(src)
+    return sources
+
+def make_source(src_obj, gramps_db) -> Source:
+    """Takes a Gramps Source object and creates one of ours."""
+    global sources_map
+
+    # Use the cached source if we can.
+    gramps_id = src_obj.gramps_id
+    if gramps_id in sources_map:
+        return sources_map[gramps_id]
+
+    # We assume that there's at most one note associated with a
+    # source, and that this is its description.
+    description = ""
+    if src_obj.note_list:
+        description = gramps_db.get_note_from_handle(src_obj.note_list[0]).text
+    src_type = SourceType.UNKNOWN
+    if src_obj.attribute_list:
+        for attr in src_obj.attribute_list:
+            if attr.type == "Type":
+                src_type = parse_source_type(attr.value)
+    source = Source(src_obj.title, gramps_id, description, src_type)
+
+    sources_map[gramps_id] = source
+    return source
 
 def extract_gender(person):
     g = person.get_gender()
