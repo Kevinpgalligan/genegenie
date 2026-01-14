@@ -23,7 +23,11 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Generation number, to display in events page. Makes it clearer how old people are.
 * Stats like total people & unique surnames.
 * Describe assumptions in the data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
+* Add a browseable tree interface.
+* Add the cool box plot to show relationships.
 
 ### Data entry
 * Marriage of Martin Clarke & Honor Kelly is not associated with Honor (referring to the event).
+* "Honor" etymology, I guess that's where "Norah" comes from.
+  https://www.libraryireland.com/names/women/onora-honor.php
 * There are a bunch of events not associated with anyone or anything.
