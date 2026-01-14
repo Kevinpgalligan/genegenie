@@ -5,7 +5,7 @@
 <p>Dates are in the format yyyy/mm/dd. A squiggle, "~", means a date is approximate. "&lt;" means before, "&gt;" means after, and a range is represented by a start &amp; end date separated by a dash.</p>
 <table class="bordered-centered-table">
 <tr><th>ID</th><th>Name</th><th>Gender</th><th>Birth</th><th>Death</th></tr>
-{% for person in people %}<tr><td>{{ person.gramps_id }}</td><td><a href="/person/{{ person.gramps_id }}.html">{{ person.listing_name }}</a></td><td>{{ format_gender(person.gender) }}</td><td>{{ format_date(person.birth_date) }}</td><td>{{ format_date(person.death_date) }}</td></tr>
+{% for person in people %}<tr><td>{{ person.gramps_id }}</td><td><a href="/person/{{ person.gramps_id }}.html">{{ person.listing_name }}</a></td><td>{{ format_gender(person.gender) }}</td><td>{{ format_event_date(person.birth) }}</td><td>{{ format_event_date(person.death) }}</td></tr>
 {% endfor %}
 
 </table>

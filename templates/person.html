@@ -3,9 +3,9 @@
 {% block content %}
 <h2>{{ person.display_name }} ({{ person.gramps_id }})</h2>
 <h4>Biographical Information</h4>
-<table><tr><td>Gender</td><td>{{ format_gender(person.gender) }}</td></tr>
-<tr><td>Birth</td><td>{{ format_date(person.birth_date) }}</td></tr>
-<tr><td>Death</td><td>{{ format_date(person.death_date) }}</td></tr>
+<table><tr><td>Gender</td><td>{{ format_cite(format_gender(person.gender), person.bio_sources, page_sources)|safe }}</td></tr>
+<tr><td>Birth</td><td>{{ format_event_date(person.birth, page_sources=page_sources)|safe }}</td></tr>
+<tr><td>Death</td><td>{{ format_event_date(person.death, page_sources=page_sources)|safe }}</td></tr>
 </table>
 
 <h4>Names</h4>
@@ -22,7 +22,7 @@
 <h4>Description</h4>
 <p>Use description attribute.</p>
 
-<h4>Citations</h4>
-<p>Maybe not its own section, maybe just... separated by a bar.</p>
+<hr>
+{% for src in page_sources.ordered_list %}<p>{{ format_source(src, page_sources)|safe }}</p>{% endfor %}
 
 {% endblock content %}

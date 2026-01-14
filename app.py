@@ -6,8 +6,11 @@ from enum import Enum
 from typing import Optional, Tuple, List
 
 from flask import Flask, render_template
+# We reuse some types from the Gramps lib, like
+# EventType and Date, but we create our own versions
+# of others.
 from gramps.gen.dbstate import DbState
-from gramps.gen.lib import Person
+from gramps.gen.lib import Person, EventType
 from gramps.gen.db.utils import make_database
 from gramps.gen.lib.date import Date
 
@@ -36,23 +39,80 @@ def parse_source_type(name: str) -> SourceType:
         return SourceType.UNKNOWN
 
 @dataclass
-class PersonInfo:
-    display_name: str
-    listing_name: str
-    gramps_id: str
-    birth_date: Optional[Date]
-    death_date: Optional[Date]
-    gender: Gender
-    bio_sources: List[Source]
-
-@dataclass
 class Source:
     title: str
     gramps_id: str
     description: str
     source_type: SourceType
 
-def format_date(d: Optional[Date]):
+class PageSources:
+    def __init__(self):
+        self.num = 1
+        self.src_to_num = {}
+        self.ordered_list = []
+
+    def get_src_number(self, src: Source) -> int:
+        if src.gramps_id not in self.src_to_num:
+            self.src_to_num[src.gramps_id] = self.num
+            self.num += 1
+            self.ordered_list.append(src)
+        return self.src_to_num[src.gramps_id]
+
+@dataclass
+class Event:
+    gramps_id: str
+    date: Optional[Date]
+    description: str
+    place: str
+    event_type: EventType
+    sources: List[Source]
+
+@dataclass
+class PersonInfo:
+    display_name: str
+    listing_name: str
+    gramps_id: str
+    birth: Optional[Event]
+    death: Optional[Event]
+    gender: Gender
+    bio_sources: List[Source]
+
+def format_event_date(event: Optional[Event], page_sources: Optional[PageSources] = None) -> str:
+    """If page_sources supplied, then a citation will be added."""
+    if not event or not event.date:
+        return "-"
+    s = format_date(event.date)
+    if page_sources:
+        return format_cite(s, event.sources, page_sources)
+    return s
+
+def format_cite(s: str, sources: List[Source], page_sources: PageSources) -> str:
+    parts = [s]
+    if not sources:
+        parts.append("<sup class='citebad'>[citation needed]</sup>")
+    else:
+        for src in sources:
+            parts.append(f"<sup class='{get_cite_class(src.source_type)}'>")
+            parts.append(f"[{page_sources.get_src_number(src)}]")
+            parts.append("</sup>")
+    return "".join(parts)
+
+def format_source(src: Source, page_sources: PageSources) -> str:
+    parts = []
+    parts.append(f"<span class='{get_cite_class(src.source_type)}'>[{page_sources.get_src_number(src)}]</span> ")
+    parts.append(src.title)
+    if src.description:
+        parts.append(f" ({src.description})")
+    return "".join(parts)
+
+def get_cite_class(src_type: SourceType) -> str:
+    if src_type in [SourceType.PRIMARY, SourceType.WEB]:
+        return "citegood"
+    elif src_type in [SourceType.RECOLLECTIONS, SourceType.TREE]:
+        return "citeokay"
+    return "citebad"
+
+def format_date(d: Optional[Date]) -> str:
     if d is None:
         return "-"
     # We don't account for all modifier types here. E.g. no spans, only
@@ -97,7 +157,6 @@ def format_ymd(year: int, month: int, day: int, prefix: Optional[str]) -> str:
         return f"{prefix}{year}/{month}"
     return f"{prefix}{year}/{month}/{day}"
     
-
 def format_gender(g: Gender):
     if g == Gender.MALE:
         return "♂️"
@@ -107,8 +166,10 @@ def format_gender(g: Gender):
 
 app = Flask(__name__)
 app.jinja_env.globals.update(
-    format_date=format_date,
-    format_gender=format_gender)
+    format_event_date=format_event_date,
+    format_cite=format_cite,
+    format_gender=format_gender,
+    format_source=format_source)
 
 people = None
 sources_map = {}
@@ -144,25 +205,16 @@ def load_people(gramps_db):
             for person in gramps_persons]
 
 def make_person_info(person, gramps_db):
-    birth_date = get_event_date(person, person.birth_ref_index, gramps_db)
-    death_date = get_event_date(person, person.death_ref_index, gramps_db)
     return PersonInfo(extract_display_name(person),
                       person.get_primary_name().get_name(),
                       person.get_gramps_id(),
-                      birth_date,
-                      death_date,
+                      get_event(person, person.birth_ref_index, gramps_db),
+                      get_event(person, person.death_ref_index, gramps_db),
                       extract_gender(person),
                       get_bio_sources(person, gramps_db))
 
 def get_bio_sources(person, gramps_db) -> List[Source]:
-    sources = []
-    for cite_handle in person.citation_list:
-        cite = gramps_db.get_citation_from_handle(cite_handle)
-        src_obj = gramps_db.get_source_from_handle(cite.source_handle)
-        src = make_source(src_obj, gramps_db)
-        if src not in sources:
-            sources.append(src)
-    return sources
+    return get_sources_from_cites(person, gramps_db)
 
 def make_source(src_obj, gramps_db) -> Source:
     """Takes a Gramps Source object and creates one of ours."""
@@ -196,11 +248,26 @@ def extract_gender(person):
         return Gender.FEMALE
     return Gender.OTHER
 
-def get_event_date(person, index, gramps_db):
+def get_event(person, index, gramps_db):
     if index < 0:
         return None
-    event = gramps_db.get_event_from_handle(person.event_ref_list[index].ref)
-    return event.date
+    event_obj = gramps_db.get_event_from_handle(person.event_ref_list[index].ref)
+    return Event(event_obj.get_gramps_id(),
+                 event_obj.date,
+                 event_obj.get_description(),
+                 event_obj.place if event_obj.place else "",
+                 event_obj.get_type(),
+                 get_sources_from_cites(event_obj, gramps_db))
+
+def get_sources_from_cites(gramps_obj, gramps_db):
+    sources = []
+    for cite_handle in gramps_obj.citation_list:
+        cite = gramps_db.get_citation_from_handle(cite_handle)
+        src_obj = gramps_db.get_source_from_handle(cite.source_handle)
+        src = make_source(src_obj, gramps_db)
+        if src not in sources:
+            sources.append(src)
+    return sources
 
 def extract_display_name(person):
     prim_name = person.get_primary_name()
@@ -228,18 +295,21 @@ def people_page():
 
 @app.route("/person/<person_id>.html")
 def person_page(person_id):
+    page_sources = PageSources()
     person = next((p
                    for p in get_people()
                    if p.gramps_id == person_id),
                   None)
-    return render_template("person.html", person=person)
+    return render_template("person.html",
+                           person=person,
+                           page_sources=page_sources)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--dbpath",
+        "dbpath",
         type=str,
-        required=False,
+        nargs="?",
         help="path to Gramps database, e.g. ~/.gramps/grampsdb/<tree-id>")
     args = parser.parse_args()
     if args.dbpath:
