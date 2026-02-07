@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %} Sources {% endblock title %}
+{% block content %}
+<h2>List of sources</h2>
+<ol>
+{% for src in sources %}
+<li><a href="/source/{{ src.gramps_id }}.html">{{ src.title }}</a>
+{% endfor%}
+</ol>
+{% endblock content %}

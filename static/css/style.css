@@ -21,6 +21,16 @@ a:hover {
     color: #999;
 }
 
+.citelink {
+    text-decoration: none;
+}
+.citelink:hover {
+    text-decoration: underline;
+}
+.person-citation:target {
+   background-color: #ffa;
+}
+
 header {
     margin-top: 10px;
     text-align: center;
@@ -75,6 +85,18 @@ video {
     padding-right: 5px;
 }
 
-.citegood { color: blue }
-.citeokay { color: fuchsia }
+.citegood { color: #00BF7F }
+.citeokay { color: #8B8000 }
 .citebad  { color: red }
+
+/* All but the 2nd column should be centered */
+#people-table td {
+    text-align: center;
+}
+#people-table td:nth-child(2) {
+    text-align: left;
+}
+
+.text-centered td {
+    text-align: center;
+}

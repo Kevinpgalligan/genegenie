@@ -38,6 +38,18 @@ def parse_source_type(name: str) -> SourceType:
         # Should only throw when it's an unknown source type. Ugly tho.
         return SourceType.UNKNOWN
 
+def render_source_type(t: SourceType) -> str:
+    if t == SourceType.RECOLLECTIONS:
+        return "Recollections"
+    elif t == SourceType.PRIMARY:
+        return "Primary source"
+    elif t == SourceType.TREE:
+        return "Another family tree"
+    elif t == SourceType.WEB:
+        return "Website"
+    else:
+        return "Unknown"
+
 @dataclass
 class Source:
     title: str
@@ -68,19 +80,28 @@ class Event:
     sources: List[Source]
 
 @dataclass
+class Name:
+    title: str
+    first: str
+    surname: str
+    name_type: str
+    sources: List[Source]
+
+@dataclass
 class PersonInfo:
     display_name: str
     listing_name: str
+    names: List[Name]
     gramps_id: str
     birth: Optional[Event]
     death: Optional[Event]
     gender: Gender
     bio_sources: List[Source]
 
-def format_event_date(event: Optional[Event], page_sources: Optional[PageSources] = None) -> str:
+def format_event_date(event: Optional[Event], page_sources: Optional[PageSources] = None, default="?") -> str:
     """If page_sources supplied, then a citation will be added."""
     if not event or not event.date:
-        return "-"
+        return default
     s = format_date(event.date)
     if page_sources:
         return format_cite(s, event.sources, page_sources)
@@ -92,17 +113,22 @@ def format_cite(s: str, sources: List[Source], page_sources: PageSources) -> str
         parts.append("<sup class='citebad'>[citation needed]</sup>")
     else:
         for src in sources:
+            src_number = page_sources.get_src_number(src)
+            parts.append(f"<a class='citelink' href='#src{page_sources.get_src_number(src)}'>")
             parts.append(f"<sup class='{get_cite_class(src.source_type)}'>")
             parts.append(f"[{page_sources.get_src_number(src)}]")
             parts.append("</sup>")
+            parts.append("</a>")
     return "".join(parts)
 
 def format_source(src: Source, page_sources: PageSources) -> str:
     parts = []
-    parts.append(f"<span class='{get_cite_class(src.source_type)}'>[{page_sources.get_src_number(src)}]</span> ")
+    src_number = page_sources.get_src_number(src)
+    parts.append(f"<p id='src{src_number}' class='person-citation'>")
+    parts.append(f"<span class='{get_cite_class(src.source_type)}'>[{src_number}]</span> ")
     parts.append(src.title)
-    if src.description:
-        parts.append(f" ({src.description})")
+    parts.append(f" <a href='/source/{src.gramps_id}.html'>(source page)</a>")
+    parts.append("</p>")
     return "".join(parts)
 
 def get_cite_class(src_type: SourceType) -> str:
@@ -114,7 +140,7 @@ def get_cite_class(src_type: SourceType) -> str:
 
 def format_date(d: Optional[Date]) -> str:
     if d is None:
-        return "-"
+        return "?"
     # We don't account for all modifier types here. E.g. no spans, only
     # ranges. I think spans are supposed to represent the gap between
     # two dates, which we would never use for our purposes, e.g. birthdays.
@@ -154,8 +180,8 @@ def format_ymd(year: int, month: int, day: int, prefix: Optional[str]) -> str:
     elif month == 0:
         return f"{prefix}{year}"
     elif day == 0:
-        return f"{prefix}{year}/{month}"
-    return f"{prefix}{year}/{month}/{day}"
+        return f"{prefix}{month}/{year}"
+    return f"{prefix}{day}/{month}/{year}"
     
 def format_gender(g: Gender):
     if g == Gender.MALE:
@@ -205,13 +231,24 @@ def load_people(gramps_db):
             for person in gramps_persons]
 
 def make_person_info(person, gramps_db):
-    return PersonInfo(extract_display_name(person),
-                      person.get_primary_name().get_name(),
-                      person.get_gramps_id(),
-                      get_event(person, person.birth_ref_index, gramps_db),
-                      get_event(person, person.death_ref_index, gramps_db),
-                      extract_gender(person),
-                      get_bio_sources(person, gramps_db))
+    names = extract_names(person, gramps_db)
+    person_info = PersonInfo(
+        extract_display_name(person),
+        person.get_primary_name().get_name(),
+        names,
+        person.get_gramps_id(),
+        get_event(person, person.birth_ref_index, gramps_db),
+        get_event(person, person.death_ref_index, gramps_db),
+        extract_gender(person),
+        get_bio_sources(person, gramps_db))
+    for name in names:
+        # If the birth name doesn't have associated sources, then
+        # fall back on the "base" source, i.e. the source for
+        # their existence.
+        # Shouldn't be a magic number, tho.
+        if not name.sources and name.name_type == "Birth Name":
+            name.sources = person_info.bio_sources
+    return person_info
 
 def get_bio_sources(person, gramps_db) -> List[Source]:
     return get_sources_from_cites(person, gramps_db)
@@ -271,18 +308,19 @@ def get_sources_from_cites(gramps_obj, gramps_db):
 
 def extract_display_name(person):
     prim_name = person.get_primary_name()
-    parts = []
-    title = prim_name.get_title()
-    if title:
-        parts.append(title)
-    parts.append(prim_name.get_first_name())
-    nick = prim_name.get_nick_name()
-    if nick:
-        parts.append("\"")
-        parts.append(nick)
-        parts.append("\"")
-    parts.append(prim_name.get_surname())
-    return " ".join(parts)
+    return f"{prim_name.get_first_name()} {prim_name.get_surname()}"
+
+def extract_names(person, gramps_db) -> List[Name]:
+    return [extract_name(n, gramps_db)
+            for n in ([person.get_primary_name()]
+                      + person.get_alternate_names())]
+
+def extract_name(name_obj, gramps_db) -> Name:
+    return Name(name_obj.get_title() or "",
+                name_obj.get_first_name(),
+                name_obj.get_surname(),
+                str(name_obj.type),
+                get_sources_from_cites(name_obj, gramps_db))
 
 @app.route("/")
 @app.route("/home.html")
@@ -304,6 +342,20 @@ def person_page(person_id):
                            person=person,
                            page_sources=page_sources)
 
+@app.route("/sources.html")
+def sources_page():
+    global sources_map
+    return render_template("sources.html", sources=list(sources_map.values()))
+
+@app.route("/source/<source_id>.html")
+def source_page(source_id):
+    global sources_map
+    src = next((src
+                for src in sources_map.values()
+                if src.gramps_id == source_id),
+                None)
+    return render_template("source.html", src=src)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -321,8 +373,12 @@ def main():
         print("Loaded Gramps data from", dbpath)
     else:
         global people
-        people = [PersonInfo("display1", "listing1", "I001", None, None, Gender.MALE),
-                  PersonInfo("display2", "listing2", "I002", None, None, Gender.FEMALE)]
+        people = [PersonInfo("person1", "listing1",
+                    [Name("Mr.", "Hello", "Goodbye", "Birth Name", [])],
+                    "I001", None, None, Gender.MALE, []),
+                  PersonInfo("person2", "listing2",
+                    [Name("Mrs.", "Zello", "Goodbye", "Married Name", [])],
+                    "I002", None, None, Gender.FEMALE, [])]
 
     app.run(port=8000)
 

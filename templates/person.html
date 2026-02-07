@@ -1,15 +1,24 @@
 {% extends "base.html" %}
 {% block title %} {{ person.display_name }} {% endblock title %}
 {% block content %}
-<h2>{{ person.display_name }} ({{ person.gramps_id }})</h2>
+<h2>{{ person.display_name }}</h2>
 <h4>Biographical Information</h4>
-<table><tr><td>Gender</td><td>{{ format_cite(format_gender(person.gender), person.bio_sources, page_sources)|safe }}</td></tr>
+<table class="bordered-centered-table text-centered"><tr><td>Gender</td><td>{{ format_gender(person.gender) }}</td></tr>
+<tr><td>Sources for existence</td><td>{{ format_cite("", person.bio_sources, page_sources)|safe }}</td></tr>
 <tr><td>Birth</td><td>{{ format_event_date(person.birth, page_sources=page_sources)|safe }}</td></tr>
-<tr><td>Death</td><td>{{ format_event_date(person.death, page_sources=page_sources)|safe }}</td></tr>
+<tr><td>Death</td><td>{{ format_event_date(person.death, page_sources=page_sources, default="-")|safe }}</td></tr>
 </table>
 
 <h4>Names</h4>
-<p>A list.</p>
+<table class="bordered-centered-table text-centered">
+<tr><th>Title</th><th>First name(s)</th><th>Surname</th><th>Type</th><th>Sources</th></tr>
+{% for name in person.names %}<tr><td>{{ name.title }}</td>
+<td>{{ name.first }}</td>
+<td>{{ name.surname }}</td>
+<td>{{ name.name_type }}</td>
+<td>{{ format_cite("", name.sources, page_sources)|safe }}</td>
+</tr>{% endfor %}
+</table>
 
 <h4>Relatives</h4>
 <p>Parents + siblings. Partners + children. Have some sorta line making the children look like child nodes in tree. Consider what to do for adopted family (only one known case).</p>

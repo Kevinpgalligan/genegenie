@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %} {{ src.title }} {% endblock title %}
+{% block content %}
+<h2>Source: {{ src.title }}</h2>
+<h4>Description</h4>
+<p>{% if src.description %}{{ src.description|safe }}{% else %}(none){% endif %}</p>
+<h4>Type</h4>
+<p>{{ render_source_type(src.source_type) }}.</p>
+{% endblock content %}
