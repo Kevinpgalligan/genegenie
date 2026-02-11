@@ -20,10 +20,19 @@
 </tr>{% endfor %}
 </table>
 
-<h4>Relatives</h4>
-<p>Parents + siblings. Partners + children. Have some sorta line making the children look like child nodes in tree. Consider what to do for adopted family (only one known case).</p>
-
-<p>And beside each individual, show at least their birth/death dates and gender.</p>
+<h4>Families</h4>
+{% for fam in person.families_as_partner %}
+<table class="bordered-centered-table text-centered">
+<tr><th colspan='4'>Partners</th></tr>
+<tr>{{ format_partner_row(fam.parent1_id, person)|safe }}</tr>
+<tr>{{ format_partner_row(fam.parent2_id, person)|safe }}</tr>
+{% if fam.children %}
+{% for child_id, relation_type in fam.children %}
+<tr>{{ format_child_row(child_id, relation_type)|safe }}</tr>
+{% endfor %}
+{% endif %}
+</table>
+{% endfor %}
 
 <h4>Events</h4>
 <p>Birth, death, marriage.</p>

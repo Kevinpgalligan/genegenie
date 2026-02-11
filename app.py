@@ -88,6 +88,15 @@ class Name:
     sources: List[Source]
 
 @dataclass
+class Family:
+    family_id: str
+    parent1_id: Optional[str]
+    parent2_id: Optional[str]
+    relationship_type: str
+    # Tuples of ID + relationship to parents.
+    children: List[Tuple[str, str]]
+
+@dataclass
 class PersonInfo:
     display_name: str
     listing_name: str
@@ -96,7 +105,24 @@ class PersonInfo:
     birth: Optional[Event]
     death: Optional[Event]
     gender: Gender
+    families_as_partner: List[Family]
+    families_as_child: List[Family]
     bio_sources: List[Source]
+
+def format_partner_row(partner_id, person) -> str:
+    global people_map
+    if partner_id == person.gramps_id:
+        return f"<td colspan='4'>{person.display_name}</td>"
+    partner = people_map[partner_id]
+    cells = []
+    cells.append(f"<td><a href='/person/{partner.gramps_id}.html'>{partner.display_name}</a></td>")
+    cells.append(f"<td>{format_gender(partner.gender)}</td>")
+    cells.append(f"<td>b. {format_event_date(partner.birth)}</td>")
+    cells.append(f"<td>d. {format_event_date(partner.death, default='-')}</td>")
+    return "".join(cells)
+
+def format_child_row(child_id, relation_type) -> str:
+    return "" # TODO
 
 def format_event_date(event: Optional[Event], page_sources: Optional[PageSources] = None, default="?") -> str:
     """If page_sources supplied, then a citation will be added."""
@@ -195,9 +221,12 @@ app.jinja_env.globals.update(
     format_event_date=format_event_date,
     format_cite=format_cite,
     format_gender=format_gender,
-    format_source=format_source)
+    format_source=format_source,
+    format_partner_row=format_partner_row,
+    format_child_row=format_child_row)
 
 people = None
+people_map = {}
 sources_map = {}
 
 def get_people():
@@ -205,7 +234,7 @@ def get_people():
     return people
 
 def load_db_data(path: Path):
-    global people
+    global people, people_map
 
     state = DbState()
     # Hardcoded to sqlite, but in earlier versions of Gramps this
@@ -218,6 +247,8 @@ def load_db_data(path: Path):
     people = sorted(load_people(state.db),
                     key=lambda person: person.listing_name)
     print("Loaded", len(people), "people")
+    for person in people:
+        people_map[person.gramps_id] = person
 
     state.get_database().close()
 
@@ -240,6 +271,8 @@ def make_person_info(person, gramps_db):
         get_event(person, person.birth_ref_index, gramps_db),
         get_event(person, person.death_ref_index, gramps_db),
         extract_gender(person),
+        get_families_as_partner(person, gramps_db),
+        get_families_as_child(person, gramps_db),
         get_bio_sources(person, gramps_db))
     for name in names:
         # If the birth name doesn't have associated sources, then
@@ -276,6 +309,38 @@ def make_source(src_obj, gramps_db) -> Source:
 
     sources_map[gramps_id] = source
     return source
+
+def get_families_as_partner(person, gramps_db) -> List[Family]:
+    return get_families(person.get_family_handle_list(), gramps_db)
+
+def get_families_as_child(person, gramps_db) -> List[Family]:
+    return get_families(person.get_parent_family_handle_list(), gramps_db)
+
+def get_families(handle_list, gramps_db) -> List[Family]:
+    fams = []
+    for handle in handle_list:
+        fam_obj = gramps_db.get_family_from_handle(handle)
+        children = []
+        for child_ref in fam_obj.get_child_ref_list():
+            child_obj = gramps_db.get_person_from_handle(child_ref.get_reference_handle())
+            children.append(
+                (child_obj.get_gramps_id(),
+                 # Assume it's the same relationship as to
+                 # the mother.
+                 str(child_ref.get_father_relation())))
+        fams.append(
+            Family(
+                fam_obj.get_gramps_id(),
+                get_parent_id(fam_obj.get_father_handle(), gramps_db),
+                get_parent_id(fam_obj.get_mother_handle(), gramps_db),
+                str(fam_obj.get_relationship()),
+                children))
+    return fams
+
+def get_parent_id(handle, gramps_db) -> Optional[str]:
+    if not handle:
+        return None
+    return gramps_db.get_person_from_handle(handle).get_gramps_id()
 
 def extract_gender(person):
     g = person.get_gender()
@@ -316,7 +381,7 @@ def extract_names(person, gramps_db) -> List[Name]:
                       + person.get_alternate_names())]
 
 def extract_name(name_obj, gramps_db) -> Name:
-    return Name(name_obj.get_title() or "",
+    return Name(name_obj.get_title() or "-",
                 name_obj.get_first_name(),
                 name_obj.get_surname(),
                 str(name_obj.type),
@@ -375,10 +440,10 @@ def main():
         global people
         people = [PersonInfo("person1", "listing1",
                     [Name("Mr.", "Hello", "Goodbye", "Birth Name", [])],
-                    "I001", None, None, Gender.MALE, []),
+                    "I001", None, None, Gender.MALE, [], [], []),
                   PersonInfo("person2", "listing2",
                     [Name("Mrs.", "Zello", "Goodbye", "Married Name", [])],
-                    "I002", None, None, Gender.FEMALE, [])]
+                    "I002", None, None, Gender.FEMALE, [], [], [])]
 
     app.run(port=8000)
 

@@ -9,9 +9,18 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Change nicknames to be their own names.
+* [Person page] Family section.
+  `-> /family/{family_id}.html endpoint.
+  `-> Figure out formatting of family tables.
+      Maybe separate sections -- Families where they're the partner, vs
+      families where they're the child.
+      Other things to show under each family...
+        "relationship type"
+        link to family page
+        notes (maybe just say "[n] notes" next to link?)
+        sources
 * Refactoring: make name type an enum? And remove "Birth Name" hardcoded value.
-* [Person page] relatives section.
+  `-> Same for child relationship types & partner rel type.
 * [Person page] events section.
 * [Person page] description section.
 * Maybe an /event/... endpoint?
@@ -29,6 +38,8 @@ This will be very specific to how I use the Gramps software, and the conventions
 * "Honor" etymology, I guess that's where "Norah" comes from.
   https://www.libraryireland.com/names/women/onora-honor.php
 * There are a bunch of events not associated with anyone or anything.
+* "Bríd" is listed as mam's nickname, should be "also known as".
+* "Sean Galligan", I0188, might be a duplicate?
 
 ### References
 * https://www.gramps-project.org/wiki/index.php?title=Using_database_API
