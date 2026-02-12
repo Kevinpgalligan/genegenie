@@ -9,20 +9,15 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* [Person page] Family section.
-  `-> /family/{family_id}.html endpoint.
-  `-> Figure out formatting of family tables.
-      Maybe separate sections -- Families where they're the partner, vs
-      families where they're the child.
-      Other things to show under each family...
-        "relationship type"
-        link to family page
-        notes (maybe just say "[n] notes" next to link?)
-        sources
+* Fix source page.
+* Family pages.
+  `-> families.html
+  `-> Finish /family/{family_id}.html endpoint.
 * Refactoring: make name type an enum? And remove "Birth Name" hardcoded value.
   `-> Same for child relationship types & partner rel type.
-* [Person page] events section.
-* [Person page] description section.
+* [Person page] Events section.
+* [Person page] Description section.
+  `-> Also get family descriptions.
 * Maybe an /event/... endpoint?
   `-> Event descriptions might come from Description attribute or
       elsewhere, need to streamline the convention.

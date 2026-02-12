@@ -95,6 +95,7 @@ class Family:
     relationship_type: str
     # Tuples of ID + relationship to parents.
     children: List[Tuple[str, str]]
+    sources: List[Source]
 
 @dataclass
 class PersonInfo:
@@ -109,20 +110,18 @@ class PersonInfo:
     families_as_child: List[Family]
     bio_sources: List[Source]
 
-def format_partner_row(partner_id, person) -> str:
-    global people_map
-    if partner_id == person.gramps_id:
-        return f"<td colspan='4'>{person.display_name}</td>"
-    partner = people_map[partner_id]
-    cells = []
-    cells.append(f"<td><a href='/person/{partner.gramps_id}.html'>{partner.display_name}</a></td>")
-    cells.append(f"<td>{format_gender(partner.gender)}</td>")
-    cells.append(f"<td>b. {format_event_date(partner.birth)}</td>")
-    cells.append(f"<td>d. {format_event_date(partner.death, default='-')}</td>")
-    return "".join(cells)
+def format_child_row(child_id: str, relation_type) -> str:
+    return format_person_row(child_id) + f"<td>{relation_type}</td>"
 
-def format_child_row(child_id, relation_type) -> str:
-    return "" # TODO
+def format_person_row(person_id: str) -> str:
+    global people_map
+    person = people_map[person_id]
+    cells = []
+    cells.append(f"<td><a href='/person/{person.gramps_id}.html'>{person.display_name}</a></td>")
+    cells.append(f"<td>{format_gender(person.gender)}</td>")
+    cells.append(f"<td>b. {format_event_date(person.birth)}</td>")
+    cells.append(f"<td>d. {format_event_date(person.death, default='-')}</td>")
+    return "".join(cells)
 
 def format_event_date(event: Optional[Event], page_sources: Optional[PageSources] = None, default="?") -> str:
     """If page_sources supplied, then a citation will be added."""
@@ -206,8 +205,8 @@ def format_ymd(year: int, month: int, day: int, prefix: Optional[str]) -> str:
     elif month == 0:
         return f"{prefix}{year}"
     elif day == 0:
-        return f"{prefix}{month}/{year}"
-    return f"{prefix}{day}/{month}/{year}"
+        return f"{prefix}{month:02d}/{year}"
+    return f"{prefix}{day:02d}/{month:02d}/{year}"
     
 def format_gender(g: Gender):
     if g == Gender.MALE:
@@ -222,12 +221,13 @@ app.jinja_env.globals.update(
     format_cite=format_cite,
     format_gender=format_gender,
     format_source=format_source,
-    format_partner_row=format_partner_row,
+    format_person_row=format_person_row,
     format_child_row=format_child_row)
 
 people = None
 people_map = {}
 sources_map = {}
+family_map = {}
 
 def get_people():
     global people
@@ -320,22 +320,31 @@ def get_families(handle_list, gramps_db) -> List[Family]:
     fams = []
     for handle in handle_list:
         fam_obj = gramps_db.get_family_from_handle(handle)
-        children = []
-        for child_ref in fam_obj.get_child_ref_list():
-            child_obj = gramps_db.get_person_from_handle(child_ref.get_reference_handle())
-            children.append(
-                (child_obj.get_gramps_id(),
-                 # Assume it's the same relationship as to
-                 # the mother.
-                 str(child_ref.get_father_relation())))
-        fams.append(
-            Family(
-                fam_obj.get_gramps_id(),
-                get_parent_id(fam_obj.get_father_handle(), gramps_db),
-                get_parent_id(fam_obj.get_mother_handle(), gramps_db),
-                str(fam_obj.get_relationship()),
-                children))
+        fams.append(make_source(fam_obj, gramps_db))
     return fams
+
+def make_family(fam_obj, gramps_db) -> Family:
+    global family_map
+    gramps_id = fam_obj.get_gramps_id()
+    if gramps_id in family_map:
+        return family_map[gramps_id]
+    children = []
+    for child_ref in fam_obj.get_child_ref_list():
+        child_obj = gramps_db.get_person_from_handle(child_ref.get_reference_handle())
+        children.append(
+            (child_obj.get_gramps_id(),
+             # Assume it's the same relationship as to
+             # the mother.
+             str(child_ref.get_father_relation())))
+    result = Family(
+        gramps_id,
+        get_parent_id(fam_obj.get_father_handle(), gramps_db),
+        get_parent_id(fam_obj.get_mother_handle(), gramps_db),
+        str(fam_obj.get_relationship()),
+        children,
+        get_sources_from_cites(fam_obj, gramps_db))
+    family_map[gramps_id] = result
+    return result
 
 def get_parent_id(handle, gramps_db) -> Optional[str]:
     if not handle:
@@ -420,6 +429,11 @@ def source_page(source_id):
                 if src.gramps_id == source_id),
                 None)
     return render_template("source.html", src=src)
+
+@app.route("/family/<family_id>.html")
+def family_page(family_id):
+    global family_map
+    return render_template("family.html", family=family_map[family_id])
 
 def main():
     parser = argparse.ArgumentParser()

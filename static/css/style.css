@@ -100,3 +100,7 @@ video {
 .text-centered td {
     text-align: center;
 }
+
+.indent {
+    margin-left: 10px;
+}

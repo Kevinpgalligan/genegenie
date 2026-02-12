@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %} {{ person.display_name }} {% endblock title %}
 {% block content %}
-<h2>{{ person.display_name }}</h2>
-<h4>Biographical Information</h4>
+<h1>{{ person.display_name }}</h1>
+<h3>Biographical Information</h3>
 <table class="bordered-centered-table text-centered"><tr><td>Gender</td><td>{{ format_gender(person.gender) }}</td></tr>
 <tr><td>Sources for existence</td><td>{{ format_cite("", person.bio_sources, page_sources)|safe }}</td></tr>
 <tr><td>Birth</td><td>{{ format_event_date(person.birth, page_sources=page_sources)|safe }}</td></tr>
 <tr><td>Death</td><td>{{ format_event_date(person.death, page_sources=page_sources, default="-")|safe }}</td></tr>
 </table>
 
-<h4>Names</h4>
+<h3>Names</h3>
 <table class="bordered-centered-table text-centered">
 <tr><th>Title</th><th>First name(s)</th><th>Surname</th><th>Type</th><th>Sources</th></tr>
 {% for name in person.names %}<tr><td>{{ name.title }}</td>
@@ -20,24 +20,70 @@
 </tr>{% endfor %}
 </table>
 
-<h4>Families</h4>
-{% for fam in person.families_as_partner %}
-<table class="bordered-centered-table text-centered">
-<tr><th colspan='4'>Partners</th></tr>
-<tr>{{ format_partner_row(fam.parent1_id, person)|safe }}</tr>
-<tr>{{ format_partner_row(fam.parent2_id, person)|safe }}</tr>
-{% if fam.children %}
+<h3>Families</h3>
+<p><i>As a child...</i></p>
+{% if person.families_as_child %}
+{% for fam in person.families_as_child %}
+<p><table class="indent bordered-centered-table text-centered">
+<tr><th colspan='5'><a href='/family/{{ fam.family_id }}.html'>{{ fam.family_id }}</a></th></tr>
+<tr><th rowspan='2'>Parents</th>
+{% if fam.parent1_id %}{{ format_person_row(fam.parent1_id)|safe }}{% else %}<td colspan='4'>?</td>{% endif %}</tr>
+{% if fam.parent2_id %}{{ format_person_row(fam.parent2_id)|safe }}{% else %}<td colspan='4'>?</td>{% endif %}</tr>
+<tr><th>Parent Rel. Type</th><td colspan='4'>{{ fam.relationship_type }}</td></tr>
+<tr><th>Rel. to Parents</th><td colspan='4'>
+{% for child_id, relationship_type in fam.children %}
+{% if child_id == person.gramps_id %}{{ relationship_type }}{% endif %}
+{% endfor %}
+</td></tr>
+{% if fam.children|length > 1 %}
+{% set ns = namespace(first_sibling=true) %}
 {% for child_id, relation_type in fam.children %}
-<tr>{{ format_child_row(child_id, relation_type)|safe }}</tr>
+{% if child_id != person.gramps_id %}
+<tr>{% if ns.first_sibling %}<th rowspan='{{ fam.children|length - 1}}'>Siblings</th>
+{% endif %}
+{% set ns.first_sibling = false %}
+{{ format_child_row(child_id, relation_type)|safe }}</tr>
+{% endif %}
 {% endfor %}
 {% endif %}
-</table>
+<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.sources, page_sources)|safe }}</td></tr>
+</table></p>
 {% endfor %}
+{% else %}
+<p class="indent">(none)</p>
+{% endif %}
 
-<h4>Events</h4>
+<p><i>With a partner...</i></p>
+{% if person.families_as_partner %}
+{% for fam in person.families_as_partner %}
+<p>
+<table class="indent bordered-centered-table text-centered">
+<tr><th colspan='5'><a href='/family/{{ fam.family_id }}.html'>{{ fam.family_id }}</a></th></tr>
+<tr><th>Partner</th>
+{% if fam.parent1_id and fam.parent2_id %}
+{{ format_person_row(fam.parent1_id if fam.parent1_id != person.gramps_id else fam.parent2_id)|safe }}
+{% else %}
+<td colspan='4'>?</td>
+{% endif %}
+<tr><th>Rel. Type</th><td colspan='4'>{{ fam.relationship_type }}</td></tr>
+
+{% if fam.children %}
+{% for child_id, relation_type in fam.children %}
+<tr>{% if loop.index0 == 0 %}<th rowspan='{{ fam.children|length }}'>Children</th>{% endif %}{{ format_child_row(child_id, relation_type)|safe }}</tr>
+{% endfor %}
+{% endif %}
+<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.sources, page_sources)|safe }}</td></tr>
+</table>
+</p>
+{% endfor %}
+{% else %}
+<p class="indent">(none)</p>
+{% endif %}
+
+<h3>Events</h3>
 <p>Birth, death, marriage.</p>
 
-<h4>Description</h4>
+<h3>Description</h3>
 <p>Use description attribute.</p>
 
 <hr>
