@@ -110,17 +110,18 @@ class PersonInfo:
     families_as_child: List[Family]
     bio_sources: List[Source]
 
-def format_child_row(child_id: str, relation_type) -> str:
-    return format_person_row(child_id) + f"<td>{relation_type}</td>"
+def format_child_row(child_id: str, relation_type, date_markers=True) -> str:
+    return (format_person_row(child_id, date_markers=date_markers)
+            + f"<td>{relation_type}</td>")
 
-def format_person_row(person_id: str) -> str:
+def format_person_row(person_id: str, date_markers=True) -> str:
     global people_map
     person = people_map[person_id]
     cells = []
     cells.append(f"<td><a href='/person/{person.gramps_id}.html'>{person.display_name}</a></td>")
     cells.append(f"<td>{format_gender(person.gender)}</td>")
-    cells.append(f"<td>b. {format_event_date(person.birth)}</td>")
-    cells.append(f"<td>d. {format_event_date(person.death, default='-')}</td>")
+    cells.append(f"<td>{'b. ' if date_markers else ''}{format_event_date(person.birth)}</td>")
+    cells.append(f"<td>{'d. ' if date_markers else ''}{format_event_date(person.death, default='-')}</td>")
     return "".join(cells)
 
 def format_event_date(event: Optional[Event], page_sources: Optional[PageSources] = None, default="?") -> str:
@@ -215,15 +216,6 @@ def format_gender(g: Gender):
         return "♀️"
     return "?"
 
-app = Flask(__name__)
-app.jinja_env.globals.update(
-    format_event_date=format_event_date,
-    format_cite=format_cite,
-    format_gender=format_gender,
-    format_source=format_source,
-    format_person_row=format_person_row,
-    format_child_row=format_child_row)
-
 people = None
 people_map = {}
 sources_map = {}
@@ -232,6 +224,10 @@ family_map = {}
 def get_people():
     global people
     return people
+
+def get_person(person_id: str) -> PersonInfo:
+    global people_map
+    return people_map[person_id]
 
 def load_db_data(path: Path):
     global people, people_map
@@ -320,7 +316,7 @@ def get_families(handle_list, gramps_db) -> List[Family]:
     fams = []
     for handle in handle_list:
         fam_obj = gramps_db.get_family_from_handle(handle)
-        fams.append(make_source(fam_obj, gramps_db))
+        fams.append(make_family(fam_obj, gramps_db))
     return fams
 
 def make_family(fam_obj, gramps_db) -> Family:
@@ -396,6 +392,17 @@ def extract_name(name_obj, gramps_db) -> Name:
                 str(name_obj.type),
                 get_sources_from_cites(name_obj, gramps_db))
 
+app = Flask(__name__)
+app.jinja_env.globals.update(
+    format_event_date=format_event_date,
+    format_cite=format_cite,
+    format_gender=format_gender,
+    format_source=format_source,
+    format_person_row=format_person_row,
+    format_child_row=format_child_row,
+    render_source_type=render_source_type,
+    get_person=get_person)
+
 @app.route("/")
 @app.route("/home.html")
 def home_page():
@@ -434,6 +441,11 @@ def source_page(source_id):
 def family_page(family_id):
     global family_map
     return render_template("family.html", family=family_map[family_id])
+
+@app.route("/families.html")
+def families_page():
+    global family_map
+    return render_template("families.html", families=list(family_map.values()))
 
 def main():
     parser = argparse.ArgumentParser()

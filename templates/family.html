@@ -2,4 +2,26 @@
 {% block title %} Family {{ family.family_id }} {% endblock title %}
 {% block content %}
 <h1>Family {{ family.family_id }}</h1>
+<h3>Members</h3>
+<table class="bordered-centered-table text-centered">
+<tr><th></th><th>Name</th><th>Gender</th><th>Birth</th><th>Death</th></tr>
+<tr><th rowspan='2'>Partners</th>{% if family.parent1_id %}{{ format_person_row(family.parent1_id, date_markers=False)|safe }}{% else %}<td colspan=4>?</td>{% endif%}
+<tr>{% if family.parent2_id %}{{ format_person_row(family.parent2_id, date_markers=False)|safe }}{% else %}<td colspan=4>?</td>{% endif%}
+
+{% if family.children %}
+{% for child_id, relation_type in family.children %}
+<tr>{% if loop.index0 == 0 %}<th rowspan='{{ family.children|length }}'>Children</th>{% endif %}{{ format_child_row(child_id, relation_type, date_markers=False)|safe }}</tr>
+{% endfor %}
+{% endif %}
+</table>
+
+<h3>Events</h3>
+<p>TODO</p>
+
+<h3>Description</h3>
+<p>TODO</p>
+
+<hr>
+<p>TODO</p>
+
 {% endblock content %}

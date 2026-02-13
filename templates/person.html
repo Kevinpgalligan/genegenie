@@ -3,10 +3,10 @@
 {% block content %}
 <h1>{{ person.display_name }}</h1>
 <h3>Biographical Information</h3>
-<table class="bordered-centered-table text-centered"><tr><td>Gender</td><td>{{ format_gender(person.gender) }}</td></tr>
-<tr><td>Sources for existence</td><td>{{ format_cite("", person.bio_sources, page_sources)|safe }}</td></tr>
-<tr><td>Birth</td><td>{{ format_event_date(person.birth, page_sources=page_sources)|safe }}</td></tr>
-<tr><td>Death</td><td>{{ format_event_date(person.death, page_sources=page_sources, default="-")|safe }}</td></tr>
+<table class="bordered-centered-table text-centered"><tr><th>Gender</th><td>{{ format_gender(person.gender) }}</td></tr>
+<tr><th>Sources for existence</th><td>{{ format_cite("", person.bio_sources, page_sources)|safe }}</td></tr>
+<tr><th>Birth</th><td>{{ format_event_date(person.birth, page_sources=page_sources)|safe }}</td></tr>
+<tr><th>Death</th><td>{{ format_event_date(person.death, page_sources=page_sources, default="-")|safe }}</td></tr>
 </table>
 
 <h3>Names</h3>
@@ -50,7 +50,7 @@
 </table></p>
 {% endfor %}
 {% else %}
-<p class="indent">(none)</p>
+<p class="indent">(not known)</p>
 {% endif %}
 
 <p><i>With a partner...</i></p>
@@ -77,14 +77,14 @@
 </p>
 {% endfor %}
 {% else %}
-<p class="indent">(none)</p>
+<p class="indent">(none known)</p>
 {% endif %}
 
 <h3>Events</h3>
-<p>Birth, death, marriage.</p>
+<p>TODO</p>
 
 <h3>Description</h3>
-<p>Use description attribute.</p>
+<p>TODO</p>
 
 <hr>
 {% for src in page_sources.ordered_list %}<p>{{ format_source(src, page_sources)|safe }}</p>{% endfor %}

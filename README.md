@@ -9,20 +9,20 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Fix source page.
 * Family pages.
-  `-> families.html
-  `-> Finish /family/{family_id}.html endpoint.
+  `-> Fill out sources on family page.
 * Refactoring: make name type an enum? And remove "Birth Name" hardcoded value.
   `-> Same for child relationship types & partner rel type.
-* [Person page] Events section.
-* [Person page] Description section.
-  `-> Also get family descriptions.
+* [Person & Family pages] Events.
+  `-> Update families on person page w/ "marriage date"
+* [Person & Family pages] Descriptions.
+  `-> Update families on person page w/ "# notes"
 * Maybe an /event/... endpoint?
   `-> Event descriptions might come from Description attribute or
       elsewhere, need to streamline the convention.
+* Names index? Include all names for all people.
 * Fix sources vs. citations, some info is hidden in citations.
-* Generation number, to display in events page. Makes it clearer how old people are.
+* Generation number, to display in people page. Makes it clearer how old people are.
 * Stats like total people & unique surnames.
 * Document my assumptions in the Gramps data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
 * Add a browseable tree interface.
