@@ -21,7 +21,7 @@
 </table>
 
 <h3>Families</h3>
-<p><i>As a child...</i></p>
+<p><i>Was part of these families as a child:</i></p>
 {% if person.families_as_child %}
 {% for fam in person.families_as_child %}
 <p><table class="indent bordered-centered-table text-centered">
@@ -53,7 +53,7 @@
 <p class="indent">(not known)</p>
 {% endif %}
 
-<p><i>With a partner...</i></p>
+<p><i>Was partnered with these people:</i></p>
 {% if person.families_as_partner %}
 {% for fam in person.families_as_partner %}
 <p>
@@ -81,7 +81,7 @@
 {% endif %}
 
 <h3>Events</h3>
-<p>TODO</p>
+{{ format_events_table(person.events, page_sources)|safe }}
 
 <h3>Description</h3>
 <p>TODO</p>

@@ -16,12 +16,16 @@
 </table>
 
 <h3>Events</h3>
-<p>TODO</p>
+{{ format_events_table(family.events, page_sources)|safe }}
 
 <h3>Description</h3>
 <p>TODO</p>
 
-<hr>
-<p>TODO</p>
+<h3>Sources</h3>
+{% if family.sources %}
+{% for src in family.sources %}<p>{{ format_source(src, page_sources)|safe }}</p>{% endfor %}
+{% else %}
+<p>(none)</p>
+{% endif %}
 
 {% endblock content %}

@@ -74,8 +74,8 @@ class PageSources:
 class Event:
     gramps_id: str
     date: Optional[Date]
-    description: str
-    place: str
+    description: Optional[str]
+    place: Optional[str]
     event_type: EventType
     sources: List[Source]
 
@@ -95,6 +95,7 @@ class Family:
     relationship_type: str
     # Tuples of ID + relationship to parents.
     children: List[Tuple[str, str]]
+    events: List[Event]
     sources: List[Source]
 
 @dataclass
@@ -108,6 +109,7 @@ class PersonInfo:
     gender: Gender
     families_as_partner: List[Family]
     families_as_child: List[Family]
+    events: List[Event]
     bio_sources: List[Source]
 
 def format_child_row(child_id: str, relation_type, date_markers=True) -> str:
@@ -156,6 +158,26 @@ def format_source(src: Source, page_sources: PageSources) -> str:
     parts.append(f" <a href='/source/{src.gramps_id}.html'>(source page)</a>")
     parts.append("</p>")
     return "".join(parts)
+
+def format_events_table(events: List[Event], page_sources: PageSources) -> str:
+    if events:
+        parts = ["""<table class="bordered-centered-table text-centered">
+<tr><th>Type</th><th>Date</th><th>Location</th><th>Description</th><th>Sources</th></tr>"""]
+        for ev in events:
+            parts.append(f"<tr>{format_event_row(ev, page_sources)}</tr>")
+        parts.append("</table>")
+        return "".join(parts)
+    else:
+        return "<p>(none known)</p>"
+
+def format_event_row(ev: Event, page_sources: PageSources) -> str:
+    return "".join([
+        f"<td>{str(ev.event_type)}</td>",
+        f"<td>{format_date(ev.date)}</td>",
+        f"<td>{ev.place or '-'}</td>",
+        f"<td>{ev.description or '-'}</td>",
+        f"<td>{format_cite('', ev.sources, page_sources)}</td>"
+    ])
 
 def get_cite_class(src_type: SourceType) -> str:
     if src_type in [SourceType.PRIMARY, SourceType.WEB]:
@@ -220,6 +242,7 @@ people = None
 people_map = {}
 sources_map = {}
 family_map = {}
+event_map = {}
 
 def get_people():
     global people
@@ -228,6 +251,10 @@ def get_people():
 def get_person(person_id: str) -> PersonInfo:
     global people_map
     return people_map[person_id]
+
+def get_event(event_id: str) -> Event:
+    global event_map
+    return event_map[event_id]
 
 def load_db_data(path: Path):
     global people, people_map
@@ -264,11 +291,12 @@ def make_person_info(person, gramps_db):
         person.get_primary_name().get_name(),
         names,
         person.get_gramps_id(),
-        get_event(person, person.birth_ref_index, gramps_db),
-        get_event(person, person.death_ref_index, gramps_db),
+        get_event_from_idx(person, person.birth_ref_index, gramps_db),
+        get_event_from_idx(person, person.death_ref_index, gramps_db),
         extract_gender(person),
         get_families_as_partner(person, gramps_db),
         get_families_as_child(person, gramps_db),
+        get_events(person, gramps_db),
         get_bio_sources(person, gramps_db))
     for name in names:
         # If the birth name doesn't have associated sources, then
@@ -338,6 +366,7 @@ def make_family(fam_obj, gramps_db) -> Family:
         get_parent_id(fam_obj.get_mother_handle(), gramps_db),
         str(fam_obj.get_relationship()),
         children,
+        get_events(fam_obj, gramps_db),
         get_sources_from_cites(fam_obj, gramps_db))
     family_map[gramps_id] = result
     return result
@@ -355,16 +384,38 @@ def extract_gender(person):
         return Gender.FEMALE
     return Gender.OTHER
 
-def get_event(person, index, gramps_db):
+def get_event_from_idx(person, index, gramps_db) -> Event:
     if index < 0:
         return None
-    event_obj = gramps_db.get_event_from_handle(person.event_ref_list[index].ref)
-    return Event(event_obj.get_gramps_id(),
-                 event_obj.date,
-                 event_obj.get_description(),
-                 event_obj.place if event_obj.place else "",
-                 event_obj.get_type(),
-                 get_sources_from_cites(event_obj, gramps_db))
+    return get_event_from_ref(person.event_ref_list[index], gramps_db)
+
+def get_events(person_or_family, gramps_db) -> Event:
+    return [get_event_from_ref(ref, gramps_db)
+            for ref in person_or_family.event_ref_list]
+
+def get_event_from_ref(event_ref, gramps_db) -> Event:
+    return make_event(gramps_db.get_event_from_handle(event_ref.ref),
+                      gramps_db)
+
+def make_event(event_obj, gramps_db) -> Event:
+    global event_map
+    event_id = event_obj.get_gramps_id()
+    if event_id in event_map:
+        return event_map[event_id]
+    event = Event(event_id,
+                  event_obj.date,
+                  event_obj.get_description(),
+                  (get_place_from_ref(event_obj.place, gramps_db)
+                   if event_obj.place
+                   else None),
+                  event_obj.get_type(),
+                  get_sources_from_cites(event_obj, gramps_db))
+    event_map[event_id] = event
+    return event
+
+def get_place_from_ref(ref, gramps_db) -> str:
+    # Need to get the "value" as it's a PlaceName object.
+    return gramps_db.get_place_from_handle(ref).get_name().get_value()
 
 def get_sources_from_cites(gramps_obj, gramps_db):
     sources = []
@@ -400,6 +451,7 @@ app.jinja_env.globals.update(
     format_source=format_source,
     format_person_row=format_person_row,
     format_child_row=format_child_row,
+    format_events_table=format_events_table,
     render_source_type=render_source_type,
     get_person=get_person)
 
@@ -414,14 +466,10 @@ def people_page():
 
 @app.route("/person/<person_id>.html")
 def person_page(person_id):
-    page_sources = PageSources()
-    person = next((p
-                   for p in get_people()
-                   if p.gramps_id == person_id),
-                  None)
+    global people_map
     return render_template("person.html",
-                           person=person,
-                           page_sources=page_sources)
+                           person=people_map[person_id],
+                           page_sources=PageSources())
 
 @app.route("/sources.html")
 def sources_page():
@@ -440,7 +488,9 @@ def source_page(source_id):
 @app.route("/family/<family_id>.html")
 def family_page(family_id):
     global family_map
-    return render_template("family.html", family=family_map[family_id])
+    return render_template("family.html",
+                           family=family_map[family_id],
+                           page_sources=PageSources())
 
 @app.route("/families.html")
 def families_page():

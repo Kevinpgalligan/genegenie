@@ -9,12 +9,10 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Family pages.
-  `-> Fill out sources on family page.
+* [Family page] Events.
+  `-> Update families on person page w/ "marriage date"
 * Refactoring: make name type an enum? And remove "Birth Name" hardcoded value.
   `-> Same for child relationship types & partner rel type.
-* [Person & Family pages] Events.
-  `-> Update families on person page w/ "marriage date"
 * [Person & Family pages] Descriptions.
   `-> Update families on person page w/ "# notes"
 * Maybe an /event/... endpoint?
@@ -29,7 +27,10 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Add the cool plot to show relationships.
 
 ### Data entry
-* Marriage of Martin Clarke & Honor Kelly is not associated with Honor (referring to the event).
+* Family events are not associated with their participants. Either
+  manually add each marriage event to the individuals, or fetch them
+  programmatically (for each person, add all family events... maybe
+  just from the families in which they were a partner, not a child).
 * "Honor" etymology, I guess that's where "Norah" comes from.
   https://www.libraryireland.com/names/women/onora-honor.php
 * There are a bunch of events not associated with anyone or anything.
