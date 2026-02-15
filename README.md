@@ -9,15 +9,14 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* [Family page] Events.
-  `-> Update families on person page w/ "marriage date"
-* Refactoring: make name type an enum? And remove "Birth Name" hardcoded value.
-  `-> Same for child relationship types & partner rel type.
+* [Person page] Update families w/ "marriage date"
 * [Person & Family pages] Descriptions.
   `-> Update families on person page w/ "# notes"
-* Maybe an /event/... endpoint?
-  `-> Event descriptions might come from Description attribute or
-      elsewhere, need to streamline the convention.
+* Check Event conventions. Do any events have a description in a Description attribute?
+  Are any of the descriptions long enough that it might be worth adding an events endpoint?
+  Does the convention need to be streamlined?
+     (one possibility: description attributes are an "extended description" that's
+      shown on the event page)
 * Names index? Include all names for all people.
 * Fix sources vs. citations, some info is hidden in citations.
 * Generation number, to display in people page. Makes it clearer how old people are.
@@ -25,6 +24,8 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Document my assumptions in the Gramps data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
 * Add a browseable tree interface.
 * Add the cool plot to show relationships.
+* Refactoring: make name type an enum? And remove "Birth Name" hardcoded value.
+  `-> Same for child relationship types & partner rel type.
 
 ### Data entry
 * Family events are not associated with their participants. Either
