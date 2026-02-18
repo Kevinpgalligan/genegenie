@@ -10,7 +10,9 @@ This will be very specific to how I use the Gramps software, and the conventions
 
 ### TODO
 * [Person & Family pages] Descriptions.
-  `-> Update families on person page w/ "# notes"
+  `-> Update families on person page w/ "# notes", since it
+      probably doesn't make sense to show all the notes on each
+      person page.
 * (Possibly more of a data problem)
   Family events are not associated with their participants. Either
   manually add each marriage event to the individuals, or fetch them
@@ -19,11 +21,18 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Check Event conventions. Do any events have a description in a Description attribute?
   Are any of the descriptions long enough that it might be worth adding an events endpoint?
   Does the convention need to be streamlined?
-     (one possibility: description attributes are an "extended description" that's
-      shown on the event page)
+     (one possibility: description attributes are
+      an "extended description" that's shown on the event page)
 * Names index. Include all names for all people.
 * Fix sources vs. citations, some info is hidden in citations.
-* Generation number, to display in people page. Makes it clearer how old people are.
+  I think I need to split them into 2 data types. Citations are stored
+  with the data (e.g. event), they point back to a source and may contain
+  extra context in the description (e.g. the findagrave links, or death
+  notice website, or Wikipedia can be a source while specific articles are
+  mentioned in citations (thinking of allegator deaths & the ambush)).
+  I know I've kinda messed this up in the database by sharing citations
+  between multiple people/events/whatever. But. That doesn't really matter.
+* Per-person stats: descendent count, ancestor count, generation number (makes it clearer how to order people)
 * Stats like total number of people & unique surnames.
 * Add a browseable tree interface.
 * Add the cool plot to show relationships.
