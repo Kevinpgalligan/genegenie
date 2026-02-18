@@ -67,6 +67,20 @@
 {% endif %}
 <tr><th>Rel. Type</th><td colspan='4'>{{ fam.relationship_type }}</td></tr>
 
+{% if fam.relationship_type == "Married" %}
+<tr><th>Marriage Date</th><td colspan='4'>
+{% set ns = namespace(found_date=false) %}
+{% for ev in fam.events %}
+{# Assuming there'll only be one marriage. #}
+{% if ev.event_type == EventType.MARRIAGE %}
+{% set ns.found_date = true %}
+{{ format_event_date(ev, page_sources)|safe }}
+{% endif %}
+{% endfor %}
+{% if not ns.found_date %} ? {% endif %}
+</td></tr>
+{% endif %}
+
 {% if fam.children %}
 {% for child_id, relation_type in fam.children %}
 <tr>{% if loop.index0 == 0 %}<th rowspan='{{ fam.children|length }}'>Children</th>{% endif %}{{ format_child_row(child_id, relation_type)|safe }}</tr>

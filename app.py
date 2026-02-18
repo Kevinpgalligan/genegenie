@@ -453,7 +453,8 @@ app.jinja_env.globals.update(
     format_child_row=format_child_row,
     format_events_table=format_events_table,
     render_source_type=render_source_type,
-    get_person=get_person)
+    get_person=get_person,
+    EventType=EventType)
 
 @app.route("/")
 @app.route("/home.html")
@@ -516,10 +517,10 @@ def main():
         global people
         people = [PersonInfo("person1", "listing1",
                     [Name("Mr.", "Hello", "Goodbye", "Birth Name", [])],
-                    "I001", None, None, Gender.MALE, [], [], []),
+                    "I001", None, None, Gender.MALE, [], [], [], []),
                   PersonInfo("person2", "listing2",
                     [Name("Mrs.", "Zello", "Goodbye", "Married Name", [])],
-                    "I002", None, None, Gender.FEMALE, [], [], [])]
+                    "I002", None, None, Gender.FEMALE, [], [], [], [])]
 
     app.run(port=8000)
 
