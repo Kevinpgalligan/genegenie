@@ -46,6 +46,7 @@
 {% endif %}
 {% endfor %}
 {% endif %}
+<tr><th>Num. Notes</th><td colspan='4'>{{ fam.notes|length }}</td></tr>
 <tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.sources, page_sources)|safe }}</td></tr>
 </table></p>
 {% endfor %}
@@ -86,6 +87,7 @@
 <tr>{% if loop.index0 == 0 %}<th rowspan='{{ fam.children|length }}'>Children</th>{% endif %}{{ format_child_row(child_id, relation_type)|safe }}</tr>
 {% endfor %}
 {% endif %}
+<tr><th>Num. Notes</th><td colspan='4'>{{ fam.notes|length }}</td></tr>
 <tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.sources, page_sources)|safe }}</td></tr>
 </table>
 </p>
@@ -97,8 +99,8 @@
 <h3>Events</h3>
 {{ format_events_table(person.events, page_sources)|safe }}
 
-<h3>Description</h3>
-<p>TODO</p>
+<h3>Notes</h3>
+{{ format_notes_table(person.notes, page_sources)|safe }}
 
 <hr>
 {% for src in page_sources.ordered_list %}<p>{{ format_source(src, page_sources)|safe }}</p>{% endfor %}

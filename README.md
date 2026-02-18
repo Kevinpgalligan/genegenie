@@ -9,10 +9,14 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* [Person & Family pages] Descriptions.
-  `-> Update families on person page w/ "# notes", since it
-      probably doesn't make sense to show all the notes on each
-      person page.
+* Fix sources vs. citations, some info is hidden in citations.
+  I think I need to split them into 2 data types. Citations are stored
+  with the data (e.g. event), they point back to a source and may contain
+  extra context in the description (e.g. the findagrave links, or death
+  notice website, or Wikipedia can be a source while specific articles are
+  mentioned in citations (thinking of allegator deaths & the ambush)).
+  I know I've kinda messed this up in the database by sharing citations
+  between multiple people/events/whatever. But. That doesn't really matter.
 * (Possibly more of a data problem)
   Family events are not associated with their participants. Either
   manually add each marriage event to the individuals, or fetch them
@@ -24,18 +28,11 @@ This will be very specific to how I use the Gramps software, and the conventions
      (one possibility: description attributes are
       an "extended description" that's shown on the event page)
 * Names index. Include all names for all people.
-* Fix sources vs. citations, some info is hidden in citations.
-  I think I need to split them into 2 data types. Citations are stored
-  with the data (e.g. event), they point back to a source and may contain
-  extra context in the description (e.g. the findagrave links, or death
-  notice website, or Wikipedia can be a source while specific articles are
-  mentioned in citations (thinking of allegator deaths & the ambush)).
-  I know I've kinda messed this up in the database by sharing citations
-  between multiple people/events/whatever. But. That doesn't really matter.
 * Per-person stats: descendent count, ancestor count, generation number (makes it clearer how to order people)
-* Stats like total number of people & unique surnames.
+* Stats like total number of people & unique surnames. Also, citation stats (to help me figure out where sources are needed).
 * Add a browseable tree interface.
 * Add the cool plot to show relationships.
+* A JS applet to identify how people are related.
 * Document my assumptions in the Gramps data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
 
 ### References

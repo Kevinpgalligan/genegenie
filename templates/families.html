@@ -3,12 +3,13 @@
 {% block content %}
 <h2>Family Index</h2>
 <table class="bordered-centered-table">
-<tr><th>ID</th><th>Partner 1</th><th>Partner 2</th><th>Type</th><th>Num. Children</th></tr>
+<tr><th>ID</th><th>Partner 1</th><th>Partner 2</th><th>Type</th><th>Num. Children</th><th>Num. Notes</th></tr>
 {% for fam in families %}<tr><td><a href="/family/{{ fam.family_id }}.html">{{ fam.family_id }}</a></td>
 <td>{% if fam.parent1_id %}<a href="/person/{{ fam.parent1_id }}.html">{{ get_person(fam.parent1_id).display_name }}</a>{% else %}?{% endif %}</td>
 <td>{% if fam.parent2_id %}<a href="/person/{{ fam.parent2_id }}.html">{{ get_person(fam.parent2_id).display_name }}</a>{% else %}?{% endif %}</td>
 <td>{{ fam.relationship_type }}</td>
-<td>{{ fam.children|length }}</td></tr>
+<td>{{ fam.children|length }}</td>
+<td>{{ fam.notes|length }}</td></tr>
 {% endfor %}
 </table>
 {% endblock content %}

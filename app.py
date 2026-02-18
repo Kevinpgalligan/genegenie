@@ -10,7 +10,7 @@ from flask import Flask, render_template
 # EventType and Date, but we create our own versions
 # of others.
 from gramps.gen.dbstate import DbState
-from gramps.gen.lib import Person, EventType
+from gramps.gen.lib import Person, EventType, AttributeType
 from gramps.gen.db.utils import make_database
 from gramps.gen.lib.date import Date
 
@@ -71,6 +71,11 @@ class PageSources:
         return self.src_to_num[src.gramps_id]
 
 @dataclass
+class Note:
+    content: str
+    sources: List[Source]
+
+@dataclass
 class Event:
     gramps_id: str
     date: Optional[Date]
@@ -96,6 +101,7 @@ class Family:
     # Tuples of ID + relationship to parents.
     children: List[Tuple[str, str]]
     events: List[Event]
+    notes: List[Note]
     sources: List[Source]
 
 @dataclass
@@ -110,6 +116,7 @@ class PersonInfo:
     families_as_partner: List[Family]
     families_as_child: List[Family]
     events: List[Event]
+    notes: List[Note]
     bio_sources: List[Source]
 
 def format_child_row(child_id: str, relation_type, date_markers=True) -> str:
@@ -178,6 +185,16 @@ def format_event_row(ev: Event, page_sources: PageSources) -> str:
         f"<td>{ev.description or '-'}</td>",
         f"<td>{format_cite('', ev.sources, page_sources)}</td>"
     ])
+
+def format_notes_table(notes: List[Note], page_sources: PageSources) -> str:
+    if not notes:
+        return "<p>(none)</p>"
+    parts = ["""<table class="bordered-centered-table">
+<tr><th>Content</th><th>Sources</th></tr>"""]
+    for note in notes:
+        parts.append(f"""<tr><td>{note.content}</td><td>{format_cite("", note.sources, page_sources)}</td></tr>""")
+    parts.append("</table>")
+    return "".join(parts)
 
 def get_cite_class(src_type: SourceType) -> str:
     if src_type in [SourceType.PRIMARY, SourceType.WEB]:
@@ -297,6 +314,7 @@ def make_person_info(person, gramps_db):
         get_families_as_partner(person, gramps_db),
         get_families_as_child(person, gramps_db),
         get_events(person, gramps_db),
+        get_notes(person, gramps_db),
         get_bio_sources(person, gramps_db))
     for name in names:
         # If the birth name doesn't have associated sources, then
@@ -323,7 +341,7 @@ def make_source(src_obj, gramps_db) -> Source:
     # source, and that this is its description.
     description = ""
     if src_obj.note_list:
-        description = gramps_db.get_note_from_handle(src_obj.note_list[0]).text
+        description = get_note_text_from_ref(src_obj.note_list[0], gramps_db)
     src_type = SourceType.UNKNOWN
     if src_obj.attribute_list:
         for attr in src_obj.attribute_list:
@@ -333,6 +351,9 @@ def make_source(src_obj, gramps_db) -> Source:
 
     sources_map[gramps_id] = source
     return source
+
+def get_note_text_from_ref(note_ref, gramps_db) -> str:
+    return gramps_db.get_note_from_handle(note_ref).text
 
 def get_families_as_partner(person, gramps_db) -> List[Family]:
     return get_families(person.get_family_handle_list(), gramps_db)
@@ -367,6 +388,7 @@ def make_family(fam_obj, gramps_db) -> Family:
         str(fam_obj.get_relationship()),
         children,
         get_events(fam_obj, gramps_db),
+        get_notes(fam_obj, gramps_db),
         get_sources_from_cites(fam_obj, gramps_db))
     family_map[gramps_id] = result
     return result
@@ -417,6 +439,20 @@ def get_place_from_ref(ref, gramps_db) -> str:
     # Need to get the "value" as it's a PlaceName object.
     return gramps_db.get_place_from_handle(ref).get_name().get_value()
 
+def get_notes(obj, gramps_db) -> List[Note]:
+    result = []
+    for attr in obj.attribute_list:
+        # The actual content is assumed to be in a single
+        # note object, inside the description attribute.
+        if (attr.type == AttributeType.DESCRIPTION
+                and len(attr.note_list) > 0):
+            result.append(Note(
+                get_note_text_from_ref(attr.note_list[0], gramps_db),
+                get_sources_from_cites(attr, gramps_db)))
+            if len(attr.note_list) > 1:
+                print(f"WARNING: {obj.gramps_id} has a description attribute with multiple notes.")
+    return result
+
 def get_sources_from_cites(gramps_obj, gramps_db):
     sources = []
     for cite_handle in gramps_obj.citation_list:
@@ -452,6 +488,7 @@ app.jinja_env.globals.update(
     format_person_row=format_person_row,
     format_child_row=format_child_row,
     format_events_table=format_events_table,
+    format_notes_table=format_notes_table,
     render_source_type=render_source_type,
     get_person=get_person,
     EventType=EventType)
@@ -517,10 +554,10 @@ def main():
         global people
         people = [PersonInfo("person1", "listing1",
                     [Name("Mr.", "Hello", "Goodbye", "Birth Name", [])],
-                    "I001", None, None, Gender.MALE, [], [], [], []),
+                    "I001", None, None, Gender.MALE, [], [], [], [], []),
                   PersonInfo("person2", "listing2",
                     [Name("Mrs.", "Zello", "Goodbye", "Married Name", [])],
-                    "I002", None, None, Gender.FEMALE, [], [], [], [])]
+                    "I002", None, None, Gender.FEMALE, [], [], [], [], [])]
 
     app.run(port=8000)
 

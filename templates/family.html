@@ -13,19 +13,16 @@
 <tr>{% if loop.index0 == 0 %}<th rowspan='{{ family.children|length }}'>Children</th>{% endif %}{{ format_child_row(child_id, relation_type, date_markers=False)|safe }}</tr>
 {% endfor %}
 {% endif %}
+<tr><th>Sources</th><td colspan='4'>{{ format_cite("", family.sources, page_sources)|safe }}</td></tr>
 </table>
 
 <h3>Events</h3>
 {{ format_events_table(family.events, page_sources)|safe }}
 
-<h3>Description</h3>
-<p>TODO</p>
+<h3>Notes</h3>
+{{ format_notes_table(family.notes, page_sources)|safe }}
 
-<h3>Sources</h3>
-{% if family.sources %}
-{% for src in family.sources %}<p>{{ format_source(src, page_sources)|safe }}</p>{% endfor %}
-{% else %}
-<p>(none)</p>
-{% endif %}
+<hr>
+{% for src in page_sources.ordered_list %}<p>{{ format_source(src, page_sources)|safe }}</p>{% endfor %}
 
 {% endblock content %}
