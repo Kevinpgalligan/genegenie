@@ -97,7 +97,7 @@
 {% endif %}
 
 <h3>Events</h3>
-{{ format_events_table(person.events, page_cites)|safe }}
+{{ format_person_events_table(person, page_cites)|safe }}
 
 <h3>Notes</h3>
 {{ format_notes_table(person.notes, page_cites)|safe }}

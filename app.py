@@ -193,8 +193,19 @@ def format_cite(s: str, cites: List[Cite], page_cites: PageCites) -> str:
                 parts.append("</a>")
     return "".join(parts)
 
+def format_person_events_table(person: PersonInfo, page_cites: PageCites) -> str:
+    events = person.events
+    for fam in person.families_as_partner:
+        events += fam.events
+    return format_events_table(events, page_cites)
+
 def format_events_table(events: List[Event], page_cites: PageCites) -> str:
     if events:
+        # Not sure if sorting on the Date type works with None.
+        events_no_date = [ev for ev in events if not ev.date]
+        events_dated = sorted([ev for ev in events if ev.date],
+                              key=lambda ev: ev.date)
+        events = events_dated + events_no_date
         parts = ["""<table class="bordered-centered-table text-centered">
 <tr><th>Type</th><th>Date</th><th>Location</th><th>Description</th><th>Sources</th></tr>"""]
         for ev in events:
@@ -529,6 +540,7 @@ app.jinja_env.globals.update(
     format_gender=format_gender,
     format_person_row=format_person_row,
     format_child_row=format_child_row,
+    format_person_events_table=format_person_events_table,
     format_events_table=format_events_table,
     format_notes_table=format_notes_table,
     format_cite_section=format_cite_section,

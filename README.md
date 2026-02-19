@@ -9,11 +9,6 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* (Possibly more of a data problem)
-  Family events are not associated with their participants. Either
-  manually add each marriage event to the individuals, or fetch them
-  programmatically (for each person, add all family events... maybe
-  just from the families in which they were a partner, not a child).
 * Check Event conventions. Do any events have a description in a Description attribute?
   Are any of the descriptions long enough that it might be worth adding an events endpoint?
   Does the convention need to be streamlined?
