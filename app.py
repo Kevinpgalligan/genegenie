@@ -14,6 +14,8 @@ from gramps.gen.lib import Person, EventType, AttributeType
 from gramps.gen.db.utils import make_database
 from gramps.gen.lib.date import Date
 
+CITE_LETTERS = "abcdefghijklmnopqrstuvwxyz"
+
 class Gender(Enum):
     MALE = 1
     FEMALE = 2
@@ -57,23 +59,55 @@ class Source:
     description: str
     source_type: SourceType
 
-class PageSources:
+@dataclass
+class Cite:
+    gramps_id: str
+    description: Optional[str]
+    source: Source
+
+# Tracks all the citations on a certain page and assigns
+# labels to them (and their associated sources).
+class PageCites:
     def __init__(self):
         self.num = 1
         self.src_to_num = {}
-        self.ordered_list = []
+        self.src_to_cite_letter_pairs = {}
+        self.srclist = []
 
     def get_src_number(self, src: Source) -> int:
-        if src.gramps_id not in self.src_to_num:
-            self.src_to_num[src.gramps_id] = self.num
+        src_id = src.gramps_id
+        if src_id not in self.src_to_num:
+            self.src_to_num[src_id] = self.num
             self.num += 1
-            self.ordered_list.append(src)
-        return self.src_to_num[src.gramps_id]
+            self.srclist.append(src)
+            self.src_to_cite_letter_pairs[src_id] = []
+        return self.src_to_num[src_id]
+
+    def get_cite_label(self, cite: Cite) -> str:
+        src_num = self.get_src_number(cite.source)
+        if not cite.description:
+            # Only cites with a description need a sublabel, otherwise
+            # they're indistinguishable from the others.
+            return str(src_num)
+
+        cite_letter_pairs = self.src_to_cite_letter_pairs[cite.source.gramps_id]
+        this_letter = None
+        for other_cite, letter in cite_letter_pairs:
+            if other_cite.gramps_id == cite.gramps_id:
+                this_letter = letter
+                break
+        if not this_letter:
+            this_letter = CITE_LETTERS[len(cite_letter_pairs)]
+            cite_letter_pairs.append((cite, this_letter))
+        return f"{src_num}{this_letter}"
+
+    def get_cite_letter_pairs(self, src: Source) -> List[Tuple[Cite, str]]:
+        return self.src_to_cite_letter_pairs[src.gramps_id]
 
 @dataclass
 class Note:
     content: str
-    sources: List[Source]
+    cites: List[Cite]
 
 @dataclass
 class Event:
@@ -82,7 +116,7 @@ class Event:
     description: Optional[str]
     place: Optional[str]
     event_type: EventType
-    sources: List[Source]
+    cites: List[Cite]
 
 @dataclass
 class Name:
@@ -90,7 +124,7 @@ class Name:
     first: str
     surname: str
     name_type: str
-    sources: List[Source]
+    cites: List[Cite]
 
 @dataclass
 class Family:
@@ -102,7 +136,7 @@ class Family:
     children: List[Tuple[str, str]]
     events: List[Event]
     notes: List[Note]
-    sources: List[Source]
+    cites: List[Cite]
 
 @dataclass
 class PersonInfo:
@@ -117,7 +151,7 @@ class PersonInfo:
     families_as_child: List[Family]
     events: List[Event]
     notes: List[Note]
-    bio_sources: List[Source]
+    bio_cites: List[Cite]
 
 def format_child_row(child_id: str, relation_type, date_markers=True) -> str:
     return (format_person_row(child_id, date_markers=date_markers)
@@ -133,67 +167,75 @@ def format_person_row(person_id: str, date_markers=True) -> str:
     cells.append(f"<td>{'d. ' if date_markers else ''}{format_event_date(person.death, default='-')}</td>")
     return "".join(cells)
 
-def format_event_date(event: Optional[Event], page_sources: Optional[PageSources] = None, default="?") -> str:
-    """If page_sources supplied, then a citation will be added."""
+def format_event_date(event: Optional[Event], page_cites: Optional[PageCites] = None, default="?") -> str:
+    """If page_cites is supplied, then a citation will be added."""
     if not event or not event.date:
         return default
     s = format_date(event.date)
-    if page_sources:
-        return format_cite(s, event.sources, page_sources)
+    if page_cites:
+        return format_cite(s, event.cites, page_cites)
     return s
 
-def format_cite(s: str, sources: List[Source], page_sources: PageSources) -> str:
+def format_cite(s: str, cites: List[Cite], page_cites: PageCites) -> str:
     parts = [s]
-    if not sources:
+    if not cites:
         parts.append("<sup class='citebad'>[citation needed]</sup>")
     else:
-        for src in sources:
-            src_number = page_sources.get_src_number(src)
-            parts.append(f"<a class='citelink' href='#src{page_sources.get_src_number(src)}'>")
-            parts.append(f"<sup class='{get_cite_class(src.source_type)}'>")
-            parts.append(f"[{page_sources.get_src_number(src)}]")
-            parts.append("</sup>")
-            parts.append("</a>")
+        already_added = set()
+        for cite in cites:
+            src = cite.source
+            label = page_cites.get_cite_label(cite)
+            if label not in already_added:
+                parts.append(f"<a class='citelink' href='#cite{label}'>")
+                parts.append(f"<sup class='{get_cite_class(src.source_type)}'>")
+                parts.append(f"[{label}]")
+                parts.append("</sup>")
+                parts.append("</a>")
     return "".join(parts)
 
-def format_source(src: Source, page_sources: PageSources) -> str:
-    parts = []
-    src_number = page_sources.get_src_number(src)
-    parts.append(f"<p id='src{src_number}' class='person-citation'>")
-    parts.append(f"<span class='{get_cite_class(src.source_type)}'>[{src_number}]</span> ")
-    parts.append(src.title)
-    parts.append(f" <a href='/source/{src.gramps_id}.html'>(source page)</a>")
-    parts.append("</p>")
-    return "".join(parts)
-
-def format_events_table(events: List[Event], page_sources: PageSources) -> str:
+def format_events_table(events: List[Event], page_cites: PageCites) -> str:
     if events:
         parts = ["""<table class="bordered-centered-table text-centered">
 <tr><th>Type</th><th>Date</th><th>Location</th><th>Description</th><th>Sources</th></tr>"""]
         for ev in events:
-            parts.append(f"<tr>{format_event_row(ev, page_sources)}</tr>")
+            parts.append(f"<tr>{format_event_row(ev, page_cites)}</tr>")
         parts.append("</table>")
         return "".join(parts)
     else:
         return "<p>(none known)</p>"
 
-def format_event_row(ev: Event, page_sources: PageSources) -> str:
+def format_event_row(ev: Event, page_cites: PageCites) -> str:
     return "".join([
         f"<td>{str(ev.event_type)}</td>",
         f"<td>{format_date(ev.date)}</td>",
         f"<td>{ev.place or '-'}</td>",
         f"<td>{ev.description or '-'}</td>",
-        f"<td>{format_cite('', ev.sources, page_sources)}</td>"
+        f"<td>{format_cite('', ev.cites, page_cites)}</td>"
     ])
 
-def format_notes_table(notes: List[Note], page_sources: PageSources) -> str:
+def format_notes_table(notes: List[Note], page_cites: PageCites) -> str:
     if not notes:
         return "<p>(none)</p>"
     parts = ["""<table class="bordered-centered-table">
 <tr><th>Content</th><th>Sources</th></tr>"""]
     for note in notes:
-        parts.append(f"""<tr><td>{note.content}</td><td>{format_cite("", note.sources, page_sources)}</td></tr>""")
+        parts.append(f"""<tr><td>{note.content}</td><td>{format_cite("", note.cites, page_cites)}</td></tr>""")
     parts.append("</table>")
+    return "".join(parts)
+
+def format_cite_section(page_cites: PageCites) -> str:
+    parts = []
+    for src in page_cites.srclist:
+        src_number = page_cites.get_src_number(src)
+        parts.append(f"<p><span id='cite{src_number}' class='person-citation'>")
+        parts.append(f"<span class='{get_cite_class(src.source_type)}'>[{src_number}]</span> ")
+        parts.append(src.title)
+
+        parts.append(f" <a href='/source/{src.gramps_id}.html'>(source page)</a>")
+        parts.append("</span>")
+        for cite, letter in page_cites.get_cite_letter_pairs(src):
+            parts.append(f"<br><span class='indent person-citation' id='cite{page_cites.get_cite_label(cite)}'>↳ ({letter}) <i>{cite.description}</i></span>")
+        parts.append("</p>")
     return "".join(parts)
 
 def get_cite_class(src_type: SourceType) -> str:
@@ -315,18 +357,18 @@ def make_person_info(person, gramps_db):
         get_families_as_child(person, gramps_db),
         get_events(person, gramps_db),
         get_notes(person, gramps_db),
-        get_bio_sources(person, gramps_db))
+        get_bio_cites(person, gramps_db))
     for name in names:
         # If the birth name doesn't have associated sources, then
         # fall back on the "base" source, i.e. the source for
         # their existence.
-        # Shouldn't be a magic number, tho.
-        if not name.sources and name.name_type == "Birth Name":
-            name.sources = person_info.bio_sources
+        # Shouldn't be using a raw string, tho.
+        if not name.cites and name.name_type == "Birth Name":
+            name.cites = person_info.bio_cites
     return person_info
 
-def get_bio_sources(person, gramps_db) -> List[Source]:
-    return get_sources_from_cites(person, gramps_db)
+def get_bio_cites(person, gramps_db) -> List[Source]:
+    return get_citations(person, gramps_db)
 
 def make_source(src_obj, gramps_db) -> Source:
     """Takes a Gramps Source object and creates one of ours."""
@@ -389,7 +431,7 @@ def make_family(fam_obj, gramps_db) -> Family:
         children,
         get_events(fam_obj, gramps_db),
         get_notes(fam_obj, gramps_db),
-        get_sources_from_cites(fam_obj, gramps_db))
+        get_citations(fam_obj, gramps_db))
     family_map[gramps_id] = result
     return result
 
@@ -431,7 +473,7 @@ def make_event(event_obj, gramps_db) -> Event:
                    if event_obj.place
                    else None),
                   event_obj.get_type(),
-                  get_sources_from_cites(event_obj, gramps_db))
+                  get_citations(event_obj, gramps_db))
     event_map[event_id] = event
     return event
 
@@ -448,20 +490,21 @@ def get_notes(obj, gramps_db) -> List[Note]:
                 and len(attr.note_list) > 0):
             result.append(Note(
                 get_note_text_from_ref(attr.note_list[0], gramps_db),
-                get_sources_from_cites(attr, gramps_db)))
+                get_citations(attr, gramps_db)))
             if len(attr.note_list) > 1:
                 print(f"WARNING: {obj.gramps_id} has a description attribute with multiple notes.")
     return result
 
-def get_sources_from_cites(gramps_obj, gramps_db):
-    sources = []
+def get_citations(gramps_obj, gramps_db) -> List[Cite]:
+    citations = []
     for cite_handle in gramps_obj.citation_list:
         cite = gramps_db.get_citation_from_handle(cite_handle)
         src_obj = gramps_db.get_source_from_handle(cite.source_handle)
-        src = make_source(src_obj, gramps_db)
-        if src not in sources:
-            sources.append(src)
-    return sources
+        citations.append(
+            Cite(cite.gramps_id,
+                 cite.get_page(),
+                 make_source(src_obj, gramps_db)))
+    return citations
 
 def extract_display_name(person):
     prim_name = person.get_primary_name()
@@ -477,18 +520,18 @@ def extract_name(name_obj, gramps_db) -> Name:
                 name_obj.get_first_name(),
                 name_obj.get_surname(),
                 str(name_obj.type),
-                get_sources_from_cites(name_obj, gramps_db))
+                get_citations(name_obj, gramps_db))
 
 app = Flask(__name__)
 app.jinja_env.globals.update(
     format_event_date=format_event_date,
     format_cite=format_cite,
     format_gender=format_gender,
-    format_source=format_source,
     format_person_row=format_person_row,
     format_child_row=format_child_row,
     format_events_table=format_events_table,
     format_notes_table=format_notes_table,
+    format_cite_section=format_cite_section,
     render_source_type=render_source_type,
     get_person=get_person,
     EventType=EventType)
@@ -507,7 +550,7 @@ def person_page(person_id):
     global people_map
     return render_template("person.html",
                            person=people_map[person_id],
-                           page_sources=PageSources())
+                           page_cites=PageCites())
 
 @app.route("/sources.html")
 def sources_page():
@@ -528,7 +571,7 @@ def family_page(family_id):
     global family_map
     return render_template("family.html",
                            family=family_map[family_id],
-                           page_sources=PageSources())
+                           page_cites=PageCites())
 
 @app.route("/families.html")
 def families_page():

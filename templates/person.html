@@ -4,9 +4,9 @@
 <h1>{{ person.display_name }}</h1>
 <h3>Biographical Information</h3>
 <table class="bordered-centered-table text-centered"><tr><th>Gender</th><td>{{ format_gender(person.gender) }}</td></tr>
-<tr><th>Sources for existence</th><td>{{ format_cite("", person.bio_sources, page_sources)|safe }}</td></tr>
-<tr><th>Birth</th><td>{{ format_event_date(person.birth, page_sources=page_sources)|safe }}</td></tr>
-<tr><th>Death</th><td>{{ format_event_date(person.death, page_sources=page_sources, default="-")|safe }}</td></tr>
+<tr><th>Sources for existence</th><td>{{ format_cite("", person.bio_cites, page_cites)|safe }}</td></tr>
+<tr><th>Birth</th><td>{{ format_event_date(person.birth, page_cites=page_cites)|safe }}</td></tr>
+<tr><th>Death</th><td>{{ format_event_date(person.death, page_cites=page_cites, default="-")|safe }}</td></tr>
 </table>
 
 <h3>Names</h3>
@@ -16,7 +16,7 @@
 <td>{{ name.first }}</td>
 <td>{{ name.surname }}</td>
 <td>{{ name.name_type }}</td>
-<td>{{ format_cite("", name.sources, page_sources)|safe }}</td>
+<td>{{ format_cite("", name.cites, page_cites)|safe }}</td>
 </tr>{% endfor %}
 </table>
 
@@ -47,7 +47,7 @@
 {% endfor %}
 {% endif %}
 <tr><th>Num. Notes</th><td colspan='4'>{{ fam.notes|length }}</td></tr>
-<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.sources, page_sources)|safe }}</td></tr>
+<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.cites, page_cites)|safe }}</td></tr>
 </table></p>
 {% endfor %}
 {% else %}
@@ -75,7 +75,7 @@
 {# Assuming there'll only be one marriage. #}
 {% if ev.event_type == EventType.MARRIAGE %}
 {% set ns.found_date = true %}
-{{ format_event_date(ev, page_sources)|safe }}
+{{ format_event_date(ev, page_cites)|safe }}
 {% endif %}
 {% endfor %}
 {% if not ns.found_date %} ? {% endif %}
@@ -88,7 +88,7 @@
 {% endfor %}
 {% endif %}
 <tr><th>Num. Notes</th><td colspan='4'>{{ fam.notes|length }}</td></tr>
-<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.sources, page_sources)|safe }}</td></tr>
+<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.cites, page_cites)|safe }}</td></tr>
 </table>
 </p>
 {% endfor %}
@@ -97,12 +97,13 @@
 {% endif %}
 
 <h3>Events</h3>
-{{ format_events_table(person.events, page_sources)|safe }}
+{{ format_events_table(person.events, page_cites)|safe }}
 
 <h3>Notes</h3>
-{{ format_notes_table(person.notes, page_sources)|safe }}
+{{ format_notes_table(person.notes, page_cites)|safe }}
 
 <hr>
-{% for src in page_sources.ordered_list %}<p>{{ format_source(src, page_sources)|safe }}</p>{% endfor %}
+
+{{ format_cite_section(page_cites)|safe }}
 
 {% endblock content %}
