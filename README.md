@@ -9,12 +9,6 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Check Event conventions. Do any events have a description in a Description attribute?
-  Are any of the descriptions long enough that it might be worth adding an events endpoint?
-  Does the convention need to be streamlined?
-     (one possibility: description attributes are
-      an "extended description" that's shown on the event page)
-* (20 mins) Names index. Include all names for all people.
 * Per-person stats: descendent count, ancestor count, generation number (makes it clearer how to order people)
 * Stats like total number of people & unique surnames. Also, citation stats (to help me figure out where sources are needed).
 * Add a browseable tree interface.

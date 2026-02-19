@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %} Names Index {% endblock title %}
+{% block content %}
+<h2>Names Index</h2>
+<p>This page lists all the names of all the people in the tree, including nicknames, married names, chosen names (for the nuns), etc.</p>
+
+{{ format_names_index()|safe }}
+
+{% endblock content %}

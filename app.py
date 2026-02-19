@@ -234,6 +234,27 @@ def format_notes_table(notes: List[Note], page_cites: PageCites) -> str:
     parts.append("</table>")
     return "".join(parts)
 
+def format_names_index() -> str:
+    global people
+    names = []
+    for perp in people:
+        for name in perp.names:
+            names.append((perp.gramps_id, name))
+    names.sort(key=lambda tup: " ".join([tup[1].first, tup[1].surname]))
+    parts = [f"""<p><table class='bordered-centered-table'>
+<tr><th>Names count</th><td>{len(names)}</td></table></p>
+<p><table class='bordered-centered-table'>
+<tr><th>Name</th><th>Title</th><th>Type</th></tr>"""]
+    for person_id, name in names:
+        parts.extend([
+            f"<tr><td><a href='/person/{person_id}.html'>",
+            f"{name.first} {name.surname}</a></td>",
+            f"<td>{name.title}</td>",
+            f"<td>{name.name_type}</td></tr>"
+        ])
+    parts.append("</table></p>")
+    return "".join(parts)
+
 def format_cite_section(page_cites: PageCites) -> str:
     parts = []
     for src in page_cites.srclist:
@@ -543,6 +564,7 @@ app.jinja_env.globals.update(
     format_person_events_table=format_person_events_table,
     format_events_table=format_events_table,
     format_notes_table=format_notes_table,
+    format_names_index=format_names_index,
     format_cite_section=format_cite_section,
     render_source_type=render_source_type,
     get_person=get_person,
@@ -589,6 +611,10 @@ def family_page(family_id):
 def families_page():
     global family_map
     return render_template("families.html", families=list(family_map.values()))
+
+@app.route("/names.html")
+def names_page():
+    return render_template("names.html")
 
 def main():
     parser = argparse.ArgumentParser()

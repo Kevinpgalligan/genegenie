@@ -2,6 +2,10 @@
 {% block title %} Family Index {% endblock title %}
 {% block content %}
 <h2>Family Index</h2>
+<p><table class="bordered-centered-table">
+<tr><th>Family count</th><td>{{families|length}}</td></tr>
+</table></p>
+
 <table class="bordered-centered-table">
 <tr><th>ID</th><th>Partner 1</th><th>Partner 2</th><th>Type</th><th>Num. Children</th><th>Num. Notes</th></tr>
 {% for fam in families %}<tr><td><a href="/family/{{ fam.family_id }}.html">{{ fam.family_id }}</a></td>

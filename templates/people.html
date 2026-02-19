@@ -3,6 +3,11 @@
 {% block content %}
 <h2>People Index</h2>
 <p>Dates are in dd/mm/yyyy format. A squiggle, "~", means a date is approximate. "&lt;" means before, "&gt;" means after, and a range is represented by a start &amp; end date separated by a dash.</p>
+
+<p><table class="bordered-centered-table">
+<tr><th>People count</th><td>{{people|length}}</td></tr>
+</table></p>
+
 <table id="people-table" class="bordered-centered-table">
 <tr><th>ID</th><th>Name</th><th>Gender</th><th>Birth</th><th>Death</th><th>Num. Notes</th></tr>
 {% for person in people %}<tr><td>{{ person.gramps_id }}</td><td><a href="/person/{{ person.gramps_id }}.html">{{ person.listing_name }}</a></td><td>{{ format_gender(person.gender) }}</td><td>{{ format_event_date(person.birth) }}</td><td>{{ format_event_date(person.death, default="-") }}</td><td>{{ person.notes|length }}</td></tr>
