@@ -9,8 +9,8 @@
 </table></p>
 
 <table id="people-table" class="bordered-centered-table">
-<tr><th>ID</th><th>Name</th><th>Gender</th><th>Birth</th><th>Death</th><th>Num. Notes</th></tr>
-{% for person in people %}<tr><td>{{ person.gramps_id }}</td><td><a href="/person/{{ person.gramps_id }}.html">{{ person.listing_name }}</a></td><td>{{ format_gender(person.gender) }}</td><td>{{ format_event_date(person.birth) }}</td><td>{{ format_event_date(person.death, default="-") }}</td><td>{{ person.notes|length }}</td></tr>
+<tr><th>ID</th><th>Name</th><th>Gender</th><th>Birth</th><th>Death</th><th>Gen.</th><th>Num. Notes</th></tr>
+{% for person in people %}<tr><td>{{ person.gramps_id }}</td><td><a href="/person/{{ person.gramps_id }}.html">{{ person.listing_name }}</a></td><td>{{ format_gender(person.gender) }}</td><td>{{ format_event_date(person.birth) }}</td><td>{{ format_event_date(person.death, default="-") }}</td><td>{{ person.generation_number }}</td><td>{{ person.notes|length }}</td></tr>
 {% endfor %}
 
 </table>

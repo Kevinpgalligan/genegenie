@@ -9,12 +9,12 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Per-person stats: descendent count, ancestor count, generation number (makes it clearer how to order people)
-* Stats like total number of people & unique surnames. Also, citation stats (to help me figure out where sources are needed).
-* Add a browseable tree interface.
+* Citation stats (to help me figure out where sources are needed).
+* Bug: some events showing up twice (see - I0011).
+* Add a browseable tree interface (maybe try dTree first).
 * Add the cool plot to show relationships.
-* A JS applet to identify how people are related.
 * Document my assumptions in the Gramps data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
+* A JS applet to identify how people are related??
 
 ### References
 Gramps API:
@@ -27,4 +27,3 @@ Tree visualisation:
 * https://github.com/PeWu/topola-viewer
 * https://github.com/trongthanh/family-tree
 * https://github.com/ErikGartner/dTree
-

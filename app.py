@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Set
 
 from flask import Flask, render_template
 # We reuse some types from the Gramps lib, like
@@ -151,6 +151,9 @@ class PersonInfo:
     families_as_child: List[Family]
     events: List[Event]
     notes: List[Note]
+    num_ancestors: Optional[int]
+    num_descendents: Optional[int]
+    generation_number: Optional[int]
     bio_cites: List[Cite]
 
 def format_child_row(child_id: str, relation_type, date_markers=True) -> str:
@@ -363,6 +366,7 @@ def load_db_data(path: Path):
     print("Loaded", len(people), "people")
     for person in people:
         people_map[person.gramps_id] = person
+    gather_people_stats(people)
 
     state.get_database().close()
 
@@ -389,6 +393,9 @@ def make_person_info(person, gramps_db):
         get_families_as_child(person, gramps_db),
         get_events(person, gramps_db),
         get_notes(person, gramps_db),
+        None,
+        None,
+        None,
         get_bio_cites(person, gramps_db))
     for name in names:
         # If the birth name doesn't have associated sources, then
@@ -554,6 +561,110 @@ def extract_name(name_obj, gramps_db) -> Name:
                 str(name_obj.type),
                 get_citations(name_obj, gramps_db))
 
+def gather_people_stats(people: List[PersonInfo]):
+    for person in people:
+        count_ancestors(person)
+        count_descendents(person)
+        count_generations(person)
+    propagate_generations(people[0], people[0].generation_number, set())
+
+def count_ancestors(person: PersonInfo) -> int:
+    global people_map
+    if not person.num_ancestors:
+        count = 0
+        for fam in person.families_as_child:
+            if is_birth_family(person, fam):
+                if fam.parent1_id:
+                    count += 1 + count_ancestors(people_map[fam.parent1_id])
+                if fam.parent2_id:
+                    count += 1 + count_ancestors(people_map[fam.parent2_id])
+                break # there should only be 1 birth family per person
+        person.num_ancestors = count
+    return person.num_ancestors
+
+def get_child_relationship(child: PersonInfo, family: Family) -> str:
+    return next(rel_type
+                for (child_id, rel_type) in family.children
+                if child_id == child.gramps_id)
+
+def count_descendents(person: PersonInfo) -> int:
+    global people_map
+    if not person.num_descendents:
+        count = 0
+        for fam in person.families_as_partner:
+            for child_id, rel_type in fam.children:
+                if rel_type == "Birth":
+                    count += 1 + count_descendents(people_map[child_id])
+        person.num_descendents = count
+    return person.num_descendents
+
+def count_generations(person: PersonInfo) -> int:
+    # Assuming that the tree is a directed acyclic graph.
+    # i.e. no incest in the family between different generations (yikes).
+    global people_map
+    if not person.generation_number:
+        gen = 1
+        has_birth_family = False
+        for fam in person.families_as_child:
+            if is_birth_family(person, fam):
+                gen = 1 + calc_max_parent_generation(person, fam)
+                has_birth_family = True
+                break
+        person.generation_number = gen
+    return person.generation_number
+
+def calc_max_parent_generation(person: PersonInfo, family: Family) -> int:
+    p1, p2 = None, None
+    g1, g2 = None, None
+    if family.parent1_id:
+        p1 = people_map[family.parent1_id]
+        g1 = count_generations(p1)
+    if family.parent2_id:
+        p2 = people_map[family.parent2_id]
+        g2 = count_generations(p2)
+    if not p1 and not p2:
+        return 0
+    if p1 and not p2:
+        return p1.generation_number
+    if not p1 and p2:
+        return p2.generation_number
+    if g1 < g2:
+        propagate_generations(p1, g2, set([p2.gramps_id]))
+        return g2
+    if g1 > g2:
+        propagate_generations(p2, g1, set([p1.gramps_id]))
+        return g1
+    return g1
+
+def propagate_generations(person: PersonInfo, gen: int, visited: Optional[Set[str]]):
+    global people_map
+    # Don't bother propagating if we haven't even calculated
+    # someone's generation number yet, we'll get to them later.
+    if person.generation_number and not person.gramps_id in visited:
+        visited.add(person.gramps_id)
+        person.generation_number = gen
+        next_gen = gen - 1
+        for fam in person.families_as_child:
+            if is_birth_family(person, fam):
+                if fam.parent1_id:
+                    propagate_generations(people_map[fam.parent1_id], next_gen, visited)
+                if fam.parent2_id:
+                    propagate_generations(people_map[fam.parent2_id], next_gen, visited)
+                break
+        for fam in person.families_as_partner:
+            if fam.parent1_id:
+                propagate_generations(people_map[fam.parent1_id], gen, visited)
+            if fam.parent2_id:
+                propagate_generations(people_map[fam.parent2_id], gen, visited)
+            for child_id, rel_type in fam.children:
+                if rel_type == "Birth":
+                    propagate_generations(people_map[child_id], gen+1, visited)
+
+
+
+def is_birth_family(person: PersonInfo, family: Family) -> bool:
+    return get_child_relationship(person, family) == "Birth"
+
 app = Flask(__name__)
 app.jinja_env.globals.update(
     format_event_date=format_event_date,
@@ -635,10 +746,12 @@ def main():
         global people
         people = [PersonInfo("person1", "listing1",
                     [Name("Mr.", "Hello", "Goodbye", "Birth Name", [])],
-                    "I001", None, None, Gender.MALE, [], [], [], [], []),
+                    "I001", None, None, Gender.MALE, [], [], [], [],
+                    0, 0, 0, []),
                   PersonInfo("person2", "listing2",
                     [Name("Mrs.", "Zello", "Goodbye", "Married Name", [])],
-                    "I002", None, None, Gender.FEMALE, [], [], [], [], [])]
+                    "I002", None, None, Gender.FEMALE, [], [], [], [],
+                    0, 0, 0, [])]
 
     app.run(port=8000)
 

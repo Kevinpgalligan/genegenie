@@ -7,6 +7,9 @@
 <tr><th>Sources for existence</th><td>{{ format_cite("", person.bio_cites, page_cites)|safe }}</td></tr>
 <tr><th>Birth</th><td>{{ format_event_date(person.birth, page_cites=page_cites)|safe }}</td></tr>
 <tr><th>Death</th><td>{{ format_event_date(person.death, page_cites=page_cites, default="-")|safe }}</td></tr>
+<tr><th>Known Ancestors</th><td>{{ person.num_ancestors|safe }}</td></tr>
+<tr><th>Known Descendents</th><td>{{ person.num_descendents|safe }}</td></tr>
+<tr><th>Generation</th><td>{{ person.generation_number|safe }}</td></tr>
 </table>
 
 <h3>Names</h3>
