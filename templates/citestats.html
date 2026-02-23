@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %} Citation Stats {% endblock title %}
+{% block content %}
+<h1>Citation Stats</h1>
+<p>This is a breakdown of what sources are available to support various entities in the tree, like people, marriages, and events.</p>
+
+<p>The golden source of truth is a written record like a census. Next is recollections, first-hand accounts, family records and the like. Not good: family trees from public websites, since these are known to be thrown together haphazardly (e.g. someone might mistakenly add a whole branch to their tree because of a name matching one of their known ancestors). Finally, worse than that is to have no source at all.</p>
+
+<h3>People</h3>
+<p>Supporting evidence for the existence of people. Any source supporting an event in someone's life (like birth), or an event in their relationships, or a description of them, etc... will count towards the existence of that person. Everyone should have at least some evidence for their existence, otherwise why would they be in the tree!</p>
+{{ format_citation_stats(peep_stats)|safe }}
+
+<h3>Date of Birth</h3>
+{{ format_citation_stats(birth_stats)|safe }}
+
+<h3>Names</h3>
+<p>For the various names that people have.</p>
+{{ format_citation_stats(name_stats)|safe }}
+
+<h3>Events</h3>
+<p>Dates, and whether they happened.</p>
+{{ format_citation_stats(event_stats)|safe }}
+
+<h3>Families</h3>
+<p>Supporting evidence for the existence and membership of a family.</p>
+{{ format_citation_stats(fam_stats)|safe }}
+
+<h3>Marriages</h3>
+<p>For the occurrence and dates of weddings - only applies to couples who are recorded as having married.</p>
+{{ format_citation_stats(marriage_stats)|safe }}
+
+<h3>Notes</h3>
+<p>For descriptions attached to people.</p>
+{{ format_citation_stats(note_stats)|safe }}
+
+{% endblock content %}

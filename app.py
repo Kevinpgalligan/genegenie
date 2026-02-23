@@ -19,7 +19,7 @@ CITE_LETTERS = "abcdefghijklmnopqrstuvwxyz"
 class Gender(Enum):
     MALE = 1
     FEMALE = 2
-    OTHER = 2
+    OTHER = 3
 
 class SourceType(Enum):
     # Someone's recollections, from talking to them.
@@ -32,6 +32,12 @@ class SourceType(Enum):
     WEB = 4
     # Only for mistakes.
     UNKNOWN = 5
+
+class SourceQuality(Enum):
+    GOOD = 1
+    FINE = 2
+    MEDIOCRE = 3
+    MISSING = 4
 
 def parse_source_type(name: str) -> SourceType:
     try:
@@ -156,6 +162,31 @@ class PersonInfo:
     generation_number: Optional[int]
     bio_cites: List[Cite]
 
+@dataclass
+class CiteStats:
+    count: int = 0
+    good: int = 0
+    fine: int = 0
+    mediocre: int = 0
+    missing: int = 0
+
+    def record(self, q: SourceQuality):
+        self.count += 1
+        if q == SourceQuality.GOOD:
+            self.good += 1
+        elif q == SourceQuality.FINE:
+            self.fine += 1
+        elif q == SourceQuality.MEDIOCRE:
+            self.mediocre += 1
+        elif q == SourceQuality.MISSING:
+            self.missing += 1
+        else:
+            raise Exception("Unknown source quality type.")
+
+    def record_missing(self):
+        self.count += 1
+        self.missing += 1
+
 def format_child_row(child_id: str, relation_type, date_markers=True) -> str:
     return (format_person_row(child_id, date_markers=date_markers)
             + f"<td>{relation_type}</td>")
@@ -190,7 +221,7 @@ def format_cite(s: str, cites: List[Cite], page_cites: PageCites) -> str:
             label = page_cites.get_cite_label(cite)
             if label not in already_added:
                 parts.append(f"<a class='citelink' href='#cite{label}'>")
-                parts.append(f"<sup class='{get_cite_class(src.source_type)}'>")
+                parts.append(f"<sup class='{get_cite_class(src)}'>")
                 parts.append(f"[{label}]")
                 parts.append("</sup>")
                 parts.append("</a>")
@@ -263,7 +294,7 @@ def format_cite_section(page_cites: PageCites) -> str:
     for src in page_cites.srclist:
         src_number = page_cites.get_src_number(src)
         parts.append(f"<p><span id='cite{src_number}' class='person-citation'>")
-        parts.append(f"<span class='{get_cite_class(src.source_type)}'>[{src_number}]</span> ")
+        parts.append(f"<span class='{get_cite_class(src)}'>[{src_number}]</span> ")
         parts.append(src.title)
 
         parts.append(f" <a href='/source/{src.gramps_id}.html'>(source page)</a>")
@@ -273,10 +304,40 @@ def format_cite_section(page_cites: PageCites) -> str:
         parts.append("</p>")
     return "".join(parts)
 
-def get_cite_class(src_type: SourceType) -> str:
-    if src_type in [SourceType.PRIMARY, SourceType.WEB]:
+def format_citation_stats(stats: CiteStats) -> str:
+    parts = ["""<table class='bordered-centered-table'>
+<tr><td></td><th>Missing</th><th>Mediocre</th><th>Fine</th><th>Good</th><th>Total</th></tr>
+<tr><th>Count</th>"""]
+    ns = [stats.missing, stats.mediocre, stats.fine, stats.good, stats.count]
+    for n in ns:
+        parts.append(f"<td>{n}</td>")
+    parts.append("</tr>")
+    parts.append("<tr><th>Percentage</th>")
+    for n in ns[:-1]:
+        pct = (100.0*(n/stats.count)) if stats.count > 0 else 0
+        parts.append(f"<td>{pct:.2f}%</td>")
+    parts.append("</tr>")
+    parts.append("</table>")
+    return "".join(parts)
+
+def get_source_quality(src: Source) -> str:
+    t = src.source_type
+    if t in [SourceType.PRIMARY, SourceType.WEB]:
+        return SourceQuality.GOOD
+    elif t == SourceType.RECOLLECTIONS:
+        return SourceQuality.FINE
+    elif t == SourceType.TREE:
+        # Other trees are often built from other people's shoddy
+        # research, they might be splicing together random trees
+        # on Ancestry.
+        return SourceQuality.MEDIOCRE
+    return SourceQuality.MISSING
+
+def get_cite_class(src: Source) -> str:
+    q = get_source_quality(src)
+    if q == SourceQuality.GOOD:
         return "citegood"
-    elif src_type in [SourceType.RECOLLECTIONS, SourceType.TREE]:
+    elif q in [SourceQuality.FINE, SourceQuality.MEDIOCRE]:
         return "citeokay"
     return "citebad"
 
@@ -568,6 +629,16 @@ def gather_people_stats(people: List[PersonInfo]):
         count_generations(person)
     propagate_generations(people[0], people[0].generation_number, set())
 
+def best_cite_quality(cites: List[Cite]) -> SourceQuality:
+    if not cites:
+        return SourceQuality.MISSING
+    best = get_source_quality(cites[0].source)
+    for cite in cites:
+        q = get_source_quality(cite.source)
+        if q.value < best.value:
+            best = q
+    return best
+
 def count_ancestors(person: PersonInfo) -> int:
     global people_map
     if not person.num_ancestors:
@@ -677,6 +748,7 @@ app.jinja_env.globals.update(
     format_notes_table=format_notes_table,
     format_names_index=format_names_index,
     format_cite_section=format_cite_section,
+    format_citation_stats=format_citation_stats,
     render_source_type=render_source_type,
     get_person=get_person,
     EventType=EventType)
@@ -726,6 +798,65 @@ def families_page():
 @app.route("/names.html")
 def names_page():
     return render_template("names.html")
+
+@app.route("/citestats.html")
+def citestats_page():
+    global people, family_map
+
+    peep_stats = CiteStats()
+    birth_stats = CiteStats()
+    name_stats = CiteStats()
+    event_stats = CiteStats()
+    fam_stats = CiteStats()
+    marriage_stats = CiteStats()
+    note_stats = CiteStats()
+
+    for peep in people:
+        # Count someone as having a source for their existence if
+        # they have a citation attached to them or to one of their events.
+        existence_cites = peep.bio_cites[:]
+        for ev in peep.events:
+            existence_cites.extend(ev.cites)
+            event_stats.record(best_cite_quality(ev.cites))
+
+        if peep.birth:
+            birth_stats.record(best_cite_quality(peep.birth.cites))
+        else:
+            birth_stats.record_missing()
+
+        for name in peep.names:
+            name_stats.record(best_cite_quality(name.cites))
+            existence_cites.extend(name.cites)
+
+        for note in peep.notes:
+            note_stats.record(best_cite_quality(note.cites))
+            existence_cites.extend(note.cites)
+
+        for fam in peep.families_as_partner:
+            for ev in fam.events:
+                existence_cites.extend(ev.cites)
+        peep_stats.record(best_cite_quality(existence_cites))
+
+    for fam in family_map.values():
+        fam_stats.record(best_cite_quality(fam.cites))
+        has_marriage_event = False
+        for ev in fam.events:
+            event_stats.record(best_cite_quality(ev.cites))
+            if ev.event_type == EventType.MARRIAGE:
+                marriage_stats.record(best_cite_quality(ev.cites))
+                has_marriage_event = True
+        if (fam.relationship_type == "Married") and not has_marriage_event:
+            marriage_stats.record_missing()
+
+    return render_template(
+        "citestats.html",
+        peep_stats=peep_stats,
+        birth_stats=birth_stats,
+        name_stats=name_stats,
+        event_stats=event_stats,
+        fam_stats=fam_stats,
+        marriage_stats=marriage_stats,
+        note_stats=note_stats)
 
 def main():
     parser = argparse.ArgumentParser()

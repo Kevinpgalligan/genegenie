@@ -9,8 +9,9 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* Citation stats (to help me figure out where sources are needed).
-* Bug: some events showing up twice (see - I0011).
+* [Citation stats] Record gramps ID for each missing/mediocre source.
+* [Bug] some events showing up twice (see - I0011).
+* [UI] somehow have a label for how siblings are related to parents.
 * Add a browseable tree interface (maybe try dTree first).
 * Add the cool plot to show relationships.
 * Document my assumptions in the Gramps data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
