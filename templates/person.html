@@ -23,17 +23,17 @@
 </tr>{% endfor %}
 </table>
 
-<h3>Families</h3>
-<p><i>Was part of these families as a child:</i></p>
+<h3>Relationships</h3>
+<p><i>Part of these families as a child:</i></p>
 {% if person.families_as_child %}
 {% for fam in person.families_as_child %}
 <p><table class="indent bordered-centered-table text-centered">
-<tr><th colspan='5'><a href='/family/{{ fam.family_id }}.html'>{{ fam.family_id }}</a></th></tr>
+<tr><th colspan='6'><a href='/family/{{ fam.family_id }}.html'>{{ fam.family_id }}</a></th></tr>
 <tr><th rowspan='2'>Parents</th>
-{% if fam.parent1_id %}{{ format_person_row(fam.parent1_id)|safe }}{% else %}<td colspan='4'>?</td>{% endif %}</tr>
-{% if fam.parent2_id %}{{ format_person_row(fam.parent2_id)|safe }}{% else %}<td colspan='4'>?</td>{% endif %}</tr>
-<tr><th>Parent Rel. Type</th><td colspan='4'>{{ fam.relationship_type }}</td></tr>
-<tr><th>Rel. to Parents</th><td colspan='4'>
+{% if fam.parent1_id %}{{ format_person_row(fam.parent1_id)|safe }}<td class='emptycell'></td>{% else %}<td colspan='5'>?</td>{% endif %}</tr>
+{% if fam.parent2_id %}{{ format_person_row(fam.parent2_id)|safe }}<td class='emptycell'></td>{% else %}<td colspan='5'>?</td>{% endif %}</tr>
+<tr><th>Parent Rel. Type</th><td colspan='5'>{{ fam.relationship_type }}</td></tr>
+<tr><th>Rel. to Parents</th><td colspan='5'>
 {% for child_id, relationship_type in fam.children %}
 {% if child_id == person.gramps_id %}{{ relationship_type }}{% endif %}
 {% endfor %}
@@ -49,30 +49,31 @@
 {% endif %}
 {% endfor %}
 {% endif %}
-<tr><th>Num. Notes</th><td colspan='4'>{{ fam.notes|length }}</td></tr>
-<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.cites, page_cites)|safe }}</td></tr>
+<tr><th>Num. Notes</th><td colspan='5'>{{ fam.notes|length }}</td></tr>
+<tr><th>Sources</th><td colspan='5'>{{ format_cite("", fam.cites, page_cites)|safe }}</td></tr>
 </table></p>
 {% endfor %}
 {% else %}
 <p class="indent">(not known)</p>
 {% endif %}
 
-<p><i>Had the following partners:</i></p>
+<p><i>Involved in following romantic relationships:</i></p>
 {% if person.families_as_partner %}
 {% for fam in person.families_as_partner %}
 <p>
 <table class="indent bordered-centered-table text-centered">
-<tr><th colspan='5'><a href='/family/{{ fam.family_id }}.html'>{{ fam.family_id }}</a></th></tr>
+<tr><th colspan='6'><a href='/family/{{ fam.family_id }}.html'>{{ fam.family_id }}</a></th></tr>
 <tr><th>Partner</th>
 {% if fam.parent1_id and fam.parent2_id %}
 {{ format_person_row(fam.parent1_id if fam.parent1_id != person.gramps_id else fam.parent2_id)|safe }}
+<td class='emptycell'></td>
 {% else %}
-<td colspan='4'>?</td>
+<td colspan='5'>?</td>
 {% endif %}
-<tr><th>Rel. Type</th><td colspan='4'>{{ fam.relationship_type }}</td></tr>
+<tr><th>Rel. Type</th><td colspan='5'>{{ fam.relationship_type }}</td></tr>
 
 {% if fam.relationship_type == "Married" %}
-<tr><th>Marriage Date</th><td colspan='4'>
+<tr><th>Marriage Date</th><td colspan='5'>
 {% set ns = namespace(found_date=false) %}
 {% for ev in fam.events %}
 {# Assuming there'll only be one marriage. #}
@@ -90,8 +91,8 @@
 <tr>{% if loop.index0 == 0 %}<th rowspan='{{ fam.children|length }}'>Children</th>{% endif %}{{ format_child_row(child_id, relation_type)|safe }}</tr>
 {% endfor %}
 {% endif %}
-<tr><th>Num. Notes</th><td colspan='4'>{{ fam.notes|length }}</td></tr>
-<tr><th>Sources</th><td colspan='4'>{{ format_cite("", fam.cites, page_cites)|safe }}</td></tr>
+<tr><th>Num. Notes</th><td colspan='5'>{{ fam.notes|length }}</td></tr>
+<tr><th>Sources</th><td colspan='5'>{{ format_cite("", fam.cites, page_cites)|safe }}</td></tr>
 </table>
 </p>
 {% endfor %}

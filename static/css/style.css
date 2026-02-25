@@ -87,6 +87,7 @@ video {
 
 .citegood { color: #00BF7F }
 .citeokay { color: #8B8000 }
+.citemediocre { color: orange }
 .citebad  { color: red }
 
 /* All but the 2nd column should be centered */
@@ -123,4 +124,8 @@ blockquote:before {
 
 blockquote p {
   display: inline;
+}
+
+.emptycell {
+    background-color: black;
 }

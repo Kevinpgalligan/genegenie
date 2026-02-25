@@ -228,9 +228,11 @@ def format_cite(s: str, cites: List[Cite], page_cites: PageCites) -> str:
     return "".join(parts)
 
 def format_person_events_table(person: PersonInfo, page_cites: PageCites) -> str:
-    events = person.events
+    events = person.events[:]
     for fam in person.families_as_partner:
-        events += fam.events
+        for ev in fam.events:
+            if not any(other.gramps_id == ev.gramps_id for other in events):
+                events.append(ev)
     return format_events_table(events, page_cites)
 
 def format_events_table(events: List[Event], page_cites: PageCites) -> str:
@@ -337,8 +339,10 @@ def get_cite_class(src: Source) -> str:
     q = get_source_quality(src)
     if q == SourceQuality.GOOD:
         return "citegood"
-    elif q in [SourceQuality.FINE, SourceQuality.MEDIOCRE]:
+    elif q == SourceQuality.FINE:
         return "citeokay"
+    elif q == SourceQuality.MEDIOCRE:
+        return "citemediocre"
     return "citebad"
 
 def format_date(d: Optional[Date]) -> str:
