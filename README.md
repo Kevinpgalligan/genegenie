@@ -10,7 +10,7 @@ See **docs/conventions.md** for a list of conventions I follow in my Gramps proj
 * The Gramps Python package should be on your Python path. I achieved this by installing Gramps through my Ubuntu package manager: `apt install gramps`.
 * Flask web server.
 
-## Usage
+### Usage
 Install Python dependencies:
 
 ```
