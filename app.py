@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Tuple, List, Set
 
@@ -134,7 +134,7 @@ class Name:
 
 @dataclass
 class Family:
-    family_id: str
+    gramps_id: str
     parent1_id: Optional[str]
     parent2_id: Optional[str]
     relationship_type: str
@@ -170,7 +170,10 @@ class CiteStats:
     mediocre: int = 0
     missing: int = 0
 
-    def record(self, q: SourceQuality):
+    ids_for_mediocre: Set[str] = field(default_factory=set)
+    ids_for_missing: Set[str] = field(default_factory=set)
+
+    def record(self, gramps_id: str, q: SourceQuality):
         self.count += 1
         if q == SourceQuality.GOOD:
             self.good += 1
@@ -178,14 +181,17 @@ class CiteStats:
             self.fine += 1
         elif q == SourceQuality.MEDIOCRE:
             self.mediocre += 1
+            self.ids_for_mediocre.add(gramps_id)
         elif q == SourceQuality.MISSING:
             self.missing += 1
+            self.ids_for_missing.add(gramps_id)
         else:
             raise Exception("Unknown source quality type.")
 
-    def record_missing(self):
+    def record_missing(self, gramps_id: str):
         self.count += 1
         self.missing += 1
+        self.ids_for_missing.add(gramps_id)
 
 def format_child_row(child_id: str, relation_type, date_markers=True) -> str:
     return (format_person_row(child_id, date_markers=date_markers)
@@ -320,6 +326,8 @@ def format_citation_stats(stats: CiteStats) -> str:
         parts.append(f"<td>{pct:.2f}%</td>")
     parts.append("</tr>")
     parts.append("</table>")
+    parts.append(f"<p>IDs with mediocre: {', '.join(gid for gid in stats.ids_for_mediocre)}</p>")
+    parts.append(f"<p>IDs with missing: {', '.join(gid for gid in stats.ids_for_missing)}</p>")
     return "".join(parts)
 
 def get_source_quality(src: Source) -> str:
@@ -821,36 +829,36 @@ def citestats_page():
         existence_cites = peep.bio_cites[:]
         for ev in peep.events:
             existence_cites.extend(ev.cites)
-            event_stats.record(best_cite_quality(ev.cites))
+            event_stats.record(ev.gramps_id, best_cite_quality(ev.cites))
 
         if peep.birth:
-            birth_stats.record(best_cite_quality(peep.birth.cites))
+            birth_stats.record(peep.gramps_id, best_cite_quality(peep.birth.cites))
         else:
-            birth_stats.record_missing()
+            birth_stats.record_missing(peep.gramps_id)
 
         for name in peep.names:
-            name_stats.record(best_cite_quality(name.cites))
+            name_stats.record(peep.gramps_id, best_cite_quality(name.cites))
             existence_cites.extend(name.cites)
 
         for note in peep.notes:
-            note_stats.record(best_cite_quality(note.cites))
+            note_stats.record(peep.gramps_id, best_cite_quality(note.cites))
             existence_cites.extend(note.cites)
 
         for fam in peep.families_as_partner:
             for ev in fam.events:
                 existence_cites.extend(ev.cites)
-        peep_stats.record(best_cite_quality(existence_cites))
+        peep_stats.record(peep.gramps_id, best_cite_quality(existence_cites))
 
     for fam in family_map.values():
-        fam_stats.record(best_cite_quality(fam.cites))
+        fam_stats.record(fam.gramps_id, best_cite_quality(fam.cites))
         has_marriage_event = False
         for ev in fam.events:
-            event_stats.record(best_cite_quality(ev.cites))
+            event_stats.record(ev.gramps_id, best_cite_quality(ev.cites))
             if ev.event_type == EventType.MARRIAGE:
-                marriage_stats.record(best_cite_quality(ev.cites))
+                marriage_stats.record(fam.gramps_id, best_cite_quality(ev.cites))
                 has_marriage_event = True
         if (fam.relationship_type == "Married") and not has_marriage_event:
-            marriage_stats.record_missing()
+            marriage_stats.record_missing(fam.gramps_id)
 
     return render_template(
         "citestats.html",

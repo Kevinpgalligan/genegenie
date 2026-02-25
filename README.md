@@ -9,11 +9,9 @@ This will be very specific to how I use the Gramps software, and the conventions
 * Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
 
 ### TODO
-* [Citation stats] Record gramps ID for each missing/mediocre source.
-* Add a browseable tree interface (maybe try dTree first).
-* Add the cool plot to show relationships.
 * Document my assumptions in the Gramps data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
-* A JS applet to identify how people are related??
+* Add a browseable tree interface (maybe try dTree first).
+* Add Quilt Chart.
 
 ### References
 Gramps API:
