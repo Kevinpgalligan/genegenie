@@ -803,6 +803,36 @@ def families_page():
 def names_page():
     return render_template("names.html")
 
+@app.route("/quilt.html")
+def quilt_page():
+    global people, family_map
+    quilt_people = []
+    for p in (people or []):
+        birth_year = None
+        if p.birth and p.birth.date:
+            y = p.birth.date.get_year()
+            if y: birth_year = y
+        quilt_people.append({
+            'id': p.gramps_id,
+            'name': p.display_name,
+            'gender': 'M' if p.gender == Gender.MALE
+                      else ('F' if p.gender == Gender.FEMALE else 'O'),
+            'generation': p.generation_number or 1,
+            'birthYear': birth_year,
+        })
+    quilt_families = []
+    for fam in family_map.values():
+        parents = [pid for pid in [fam.parent1_id, fam.parent2_id] if pid]
+        children = [cid for cid, _ in fam.children]
+        if parents or children:
+            quilt_families.append({
+                'id': fam.family_id,
+                'parents': parents,
+                'children': children,
+            })
+    quilt_data = { 'people': quilt_people, 'families': quilt_families }
+    return render_template("quilt.html", quilt_data=quilt_data)
+
 @app.route("/citestats.html")
 def citestats_page():
     global people, family_map

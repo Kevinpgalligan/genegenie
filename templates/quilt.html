@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Quilt Chart{% endblock title %}
+{% block content %}
+<h2>Quilt Chart</h2>
+<p class="quilt-legend">
+    <span class="legend-swatch" style="background:#2c5aa0"></span> Father (parent)
+    <span class="legend-swatch" style="background:#a02c5a"></span> Mother (parent)
+    <span class="legend-swatch" style="background:#7ba3d4;border-radius:50%"></span> Son (child)
+    <span class="legend-swatch" style="background:#d47ba3;border-radius:50%"></span> Daughter (child)
+</p>
+<div id="quilt-container">
+    <canvas id="quilt-canvas"></canvas>
+</div>
+
+<style>
+    /* Override the base body max-width for this page */
+    body { max-width: none; padding: 0 20px; }
+    #quilt-container {
+        width: 100%;
+        height: calc(100vh - 160px);
+        border: 1px solid #ddd;
+        background: #fff;
+    }
+    #quilt-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+    }
+    #quilt-canvas:active { cursor: grabbing; }
+    .quilt-legend {
+        font: 13px Helvetica, Arial, sans-serif;
+        color: #555;
+        margin-bottom: 8px;
+    }
+    .legend-swatch {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        vertical-align: middle;
+        margin: 0 3px 0 12px;
+    }
+    .legend-swatch:first-child { margin-left: 0; }
+</style>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="/static/js/quilt.js"></script>
+<script>
+    var quiltData = {{ quilt_data | tojson }};
+    renderQuilt(document.getElementById('quilt-canvas'), quiltData);
+</script>
+{% endblock content %}
