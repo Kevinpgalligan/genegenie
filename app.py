@@ -21,49 +21,18 @@ class Gender(Enum):
     FEMALE = 2
     OTHER = 3
 
-class SourceType(Enum):
-    # Someone's recollections, from talking to them.
-    RECOLLECTIONS = 1
-    # Primary source, e.g. birth cert.
-    PRIMARY = 2
-    # Another family tree or genealogical document.
-    TREE = 3
-    # Website or web database.
-    WEB = 4
-    # Only for mistakes.
-    UNKNOWN = 5
-
 class SourceQuality(Enum):
     GOOD = 1
     FINE = 2
     MEDIOCRE = 3
     MISSING = 4
 
-def parse_source_type(name: str) -> SourceType:
-    try:
-        return SourceType[name.upper()]
-    except:
-        # Should only throw when it's an unknown source type. Ugly tho.
-        return SourceType.UNKNOWN
-
-def render_source_type(t: SourceType) -> str:
-    if t == SourceType.RECOLLECTIONS:
-        return "Recollections"
-    elif t == SourceType.PRIMARY:
-        return "Primary source"
-    elif t == SourceType.TREE:
-        return "Another family tree"
-    elif t == SourceType.WEB:
-        return "Website"
-    else:
-        return "Unknown"
-
 @dataclass
 class Source:
     title: str
     gramps_id: str
     description: str
-    source_type: SourceType
+    quality: SourceQuality
 
 @dataclass
 class Cite:
@@ -330,21 +299,8 @@ def format_citation_stats(stats: CiteStats) -> str:
     parts.append(f"<p>IDs with missing: {', '.join(gid for gid in stats.ids_for_missing)}</p>")
     return "".join(parts)
 
-def get_source_quality(src: Source) -> str:
-    t = src.source_type
-    if t in [SourceType.PRIMARY, SourceType.WEB]:
-        return SourceQuality.GOOD
-    elif t == SourceType.RECOLLECTIONS:
-        return SourceQuality.FINE
-    elif t == SourceType.TREE:
-        # Other trees are often built from other people's shoddy
-        # research, they might be splicing together random trees
-        # on Ancestry.
-        return SourceQuality.MEDIOCRE
-    return SourceQuality.MISSING
-
 def get_cite_class(src: Source) -> str:
-    q = get_source_quality(src)
+    q = src.quality
     if q == SourceQuality.GOOD:
         return "citegood"
     elif q == SourceQuality.FINE:
@@ -496,15 +452,26 @@ def make_source(src_obj, gramps_db) -> Source:
     description = ""
     if src_obj.note_list:
         description = get_note_text_from_ref(src_obj.note_list[0], gramps_db)
-    src_type = SourceType.UNKNOWN
+    quality = SourceQuality.MEDIOCRE
+    found_q = False
     if src_obj.attribute_list:
         for attr in src_obj.attribute_list:
-            if attr.type == "Type":
-                src_type = parse_source_type(attr.value)
-    source = Source(src_obj.title, gramps_id, description, src_type)
+            if attr.type == "Quality":
+                quality = parse_source_quality(attr.value)
+                found_q = True
+    if not found_q:
+        print(f"WARN: source {gramps_id} does not have a Quality attribute.")
+    source = Source(src_obj.title, gramps_id, description, quality)
 
     sources_map[gramps_id] = source
     return source
+
+def parse_source_quality(s: str) -> SourceQuality:
+    if s == "good":
+        return SourceQuality.GOOD
+    if s == "fine":
+        return SourceQuality.FINE
+    return SourceQuality.MEDIOCRE
 
 def get_note_text_from_ref(note_ref, gramps_db) -> str:
     return gramps_db.get_note_from_handle(note_ref).text
@@ -644,9 +611,9 @@ def gather_people_stats(people: List[PersonInfo]):
 def best_cite_quality(cites: List[Cite]) -> SourceQuality:
     if not cites:
         return SourceQuality.MISSING
-    best = get_source_quality(cites[0].source)
+    best = cites[0].source.quality
     for cite in cites:
-        q = get_source_quality(cite.source)
+        q = cite.source.quality
         if q.value < best.value:
             best = q
     return best
@@ -748,6 +715,27 @@ def propagate_generations(person: PersonInfo, gen: int, visited: Optional[Set[st
 def is_birth_family(person: PersonInfo, family: Family) -> bool:
     return get_child_relationship(person, family) == "Birth"
 
+def get_existence_cites(person: PersonInfo) -> List[Cite]:
+    result = []
+    seen = set()
+    def add_cites(cs):
+        for c in cs:
+            if c.gramps_id not in seen:
+                seen.add(c.gramps_id)
+                result.append(c)
+    add_cites(person.bio_cites)
+    for ev in person.events:
+        add_cites(ev.cites)
+    for name in person.names:
+        add_cites(name.cites)
+    for note in person.notes:
+        add_cites(note.cites)
+    for fam in person.families_as_partner:
+        add_cites(fam.cites)
+        for ev in fam.events:
+            add_cites(ev.cites)
+    return result
+
 app = Flask(__name__)
 app.jinja_env.globals.update(
     format_event_date=format_event_date,
@@ -761,7 +749,8 @@ app.jinja_env.globals.update(
     format_names_index=format_names_index,
     format_cite_section=format_cite_section,
     format_citation_stats=format_citation_stats,
-    render_source_type=render_source_type,
+    get_cite_class=get_cite_class,
+    get_existence_cites=get_existence_cites,
     get_person=get_person,
     EventType=EventType)
 
@@ -826,9 +815,7 @@ def citestats_page():
     for peep in people:
         # Count someone as having a source for their existence if
         # they have a citation attached to them or to one of their events.
-        existence_cites = peep.bio_cites[:]
         for ev in peep.events:
-            existence_cites.extend(ev.cites)
             event_stats.record(ev.gramps_id, best_cite_quality(ev.cites))
 
         if peep.birth:
@@ -838,16 +825,14 @@ def citestats_page():
 
         for name in peep.names:
             name_stats.record(peep.gramps_id, best_cite_quality(name.cites))
-            existence_cites.extend(name.cites)
 
         for note in peep.notes:
             note_stats.record(peep.gramps_id, best_cite_quality(note.cites))
-            existence_cites.extend(note.cites)
 
-        for fam in peep.families_as_partner:
-            for ev in fam.events:
-                existence_cites.extend(ev.cites)
-        peep_stats.record(peep.gramps_id, best_cite_quality(existence_cites))
+        peep_stats.record(
+            peep.gramps_id,
+            best_cite_quality(
+                get_existence_cites(peep)))
 
     for fam in family_map.values():
         fam_stats.record(fam.gramps_id, best_cite_quality(fam.cites))

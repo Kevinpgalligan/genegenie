@@ -4,7 +4,7 @@
 <h1>{{ person.display_name }}</h1>
 <h3>Biographical Information</h3>
 <table class="bordered-centered-table text-centered"><tr><th>Gender</th><td>{{ format_gender(person.gender) }}</td></tr>
-<tr><th>Sources for existence</th><td>{{ format_cite("", person.bio_cites, page_cites)|safe }}</td></tr>
+<tr><th>Sources for existence</th><td>{{ format_cite("", get_existence_cites(person), page_cites)|safe }}</td></tr>
 <tr><th>Birth</th><td>{{ format_event_date(person.birth, page_cites=page_cites)|safe }}</td></tr>
 <tr><th>Death</th><td>{{ format_event_date(person.death, page_cites=page_cites, default="-")|safe }}</td></tr>
 <tr><th>Known Ancestors</th><td>{{ person.num_ancestors|safe }}</td></tr>

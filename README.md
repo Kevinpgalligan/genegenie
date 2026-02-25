@@ -1,17 +1,27 @@
 ## genegenie
-Work-in-progress website generator for Gramps family trees.
+A website generator for Gramps family trees.
 
-This will be very specific to how I use the Gramps software, and the conventions I've adopted. However, it might be useful as a basis for someone who wants to develop their own Gramps-related software.
+![the people page, a table with name, gender, birth, death etc.](https://github.com/Kevinpgalligan/genegenie/blob/master/img/people.png)
+
+See **docs/conventions.md** for a list of conventions I follow in my Gramps project, which the software makes use of.
 
 ### Requirements
 * Gramps 5.1 (haven't tested with other versions).
 * The Gramps Python package should be on your Python path. I achieved this by installing Gramps through my Ubuntu package manager: `apt install gramps`.
-* Flask (Python web server... I will eventually freeze the requirements in a requirements.txt).
+* Flask web server.
 
-### TODO
-* Document my assumptions in the Gramps data (sources have a Type attribute, and a note to describe them; bio info in a Description attribute)
-* Add a browseable tree interface (maybe try dTree first).
-* Add Quilt Chart.
+## Usage
+Install Python dependencies:
+
+```
+pip3 install -r requirements.txt
+```
+
+Run the server:
+
+```
+python3 app.py ~/.gramps/grampsdb/<your-tree-id>/
+```
 
 ### References
 Gramps API:
@@ -24,3 +34,8 @@ Tree visualisation:
 * https://github.com/PeWu/topola-viewer
 * https://github.com/trongthanh/family-tree
 * https://github.com/ErikGartner/dTree
+
+### TODO
+* Add a browseable tree interface (maybe try dTree first).
+* Ability to dump a frozen version of the website.
+* Add Quilt Chart.

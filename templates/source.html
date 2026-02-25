@@ -4,6 +4,6 @@
 <h2>Source: {{ src.title }}</h2>
 <h4>Description</h4>
 <p>{% if src.description %}{{ src.description|safe }}{% else %}(none){% endif %}</p>
-<h4>Type</h4>
-<p>{{ render_source_type(src.source_type) }}.</p>
+<h4>Quality</h4>
+<p class='{{get_cite_class(src)}}'>{{ src.quality.name.capitalize() }}</p>
 {% endblock content %}
