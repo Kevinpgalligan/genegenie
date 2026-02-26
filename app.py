@@ -910,7 +910,7 @@ def main():
         print("Building website, saving to build/ directory.")
         freezer.freeze()
     else:
-        app.run(port=8000, debug=True)
+        app.run(port=8000)
 
 if __name__ == "__main__":
     main()
