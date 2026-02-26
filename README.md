@@ -23,6 +23,14 @@ Run the server:
 python3 app.py ~/.gramps/grampsdb/<your-tree-id>/
 ```
 
+...and then open the indicated local URL in a browser.
+
+Or generate all the website files and dump them to a `build` directory:
+
+```
+python3 app.py ~/.gramps/grampsdb/<your-tree-id>/ --freeze
+```
+
 ### References
 Gramps API:
 * https://www.gramps-project.org/wiki/index.php?title=Using_database_API
@@ -34,8 +42,4 @@ Tree visualisation:
 * https://github.com/PeWu/topola-viewer
 * https://github.com/trongthanh/family-tree
 * https://github.com/ErikGartner/dTree
-
-### TODO
-* Add a browseable tree interface (maybe try dTree first).
-* Ability to dump a frozen version of the website.
-* Add Quilt Chart.
+* https://donatso.github.io/family-chart-doc/

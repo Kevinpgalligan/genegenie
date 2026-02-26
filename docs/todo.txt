@@ -1,0 +1,3 @@
+* Add a browseable tree interface (https://donatso.github.io/family-chart-doc/).
+* Add Quilt Chart.
+* Handle media (e.g. show picture of a census form).

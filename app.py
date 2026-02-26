@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Optional, Tuple, List, Set
 
 from flask import Flask, render_template
+from flask_frozen import Freezer
 # We reuse some types from the Gramps lib, like
 # EventType and Date, but we create our own versions
 # of others.
@@ -754,8 +755,10 @@ app.jinja_env.globals.update(
     get_person=get_person,
     EventType=EventType)
 
-@app.route("/")
+freezer = Freezer(app)
+
 @app.route("/home.html")
+@app.route("/")
 def home_page():
     return render_template("home.html")
 
@@ -855,13 +858,36 @@ def citestats_page():
         marriage_stats=marriage_stats,
         note_stats=note_stats)
 
+# Need to help Frozen-Flask to find the parameterised page names.
+@freezer.register_generator
+def person_urls():
+    global people
+    for person in people:
+        yield "person_page", dict(person_id=person.gramps_id)
+
+@freezer.register_generator
+def family_urls():
+    global family_map
+    for fam in family_map.values():
+        yield "family_page", dict(family_id=fam.gramps_id)
+
+@freezer.register_generator
+def src_urls():
+    global sources_map
+    for src in sources_map.values():
+        yield "source_page", dict(source_id=src.gramps_id)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "dbpath",
         type=str,
         nargs="?",
-        help="path to Gramps database, e.g. ~/.gramps/grampsdb/<tree-id>")
+        help="Path to Gramps database, e.g. ~/.gramps/grampsdb/<tree-id>")
+    parser.add_argument(
+        "--freeze",
+        action="store_true",
+        help="Whether to generate all the website files and dump them to a build directory.")
     args = parser.parse_args()
     if args.dbpath:
         dbpath = Path(args.dbpath)
@@ -880,8 +906,11 @@ def main():
                     [Name("Mrs.", "Zello", "Goodbye", "Married Name", [])],
                     "I002", None, None, Gender.FEMALE, [], [], [], [],
                     0, 0, 0, [])]
-
-    app.run(port=8000)
+    if args.freeze:
+        print("Building website, saving to build/ directory.")
+        freezer.freeze()
+    else:
+        app.run(port=8000, debug=True)
 
 if __name__ == "__main__":
     main()
