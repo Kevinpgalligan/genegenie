@@ -13,21 +13,21 @@ If the Quality attribute is missing, or has an unknown value, it'll default to M
 
 Sources can also have a description, contained in a single "Note". If there are multiple Notes, then only the first one will be used.
 
-People, events, families, description attributes, and names can all have soruces associated with them.
+People, events, families, description attributes, and names can all have sources associated with them.
 
 Individual citations can have a short description under the Volume/Page field. This description will be shown in the citations section at the bottom of the page where the citation is used, like you'd see on Wikipedia. Not ideal to put the description under Volume/Page, since it might actually be used for its intended purpose of recording the volume/page...
 
 #### Biographical notes
-People can have biographical notes, in the form of Description attributes. The attribute values can contain arbitrary HTML. I mostly use this to separate them into paragraphs (with the p element), for extended quotes (blockquote element), and web links. 
+People can have biographical notes, in the form of Description attributes. The attribute values can contain arbitrary HTML. I mostly use the HTML formatting to separate the descriptions into paragraphs (with the p element), for extended quotes (blockquote element), and for web links (with the 'a' element). 
 
 #### Names
-People can have multiple names. In my tree, I manually add a Married name for married women who take their husband's surname. The Title and Type are extracted for each name.
+People can have multiple names. In my tree, I manually add a Married name for married women who take their husband's surname. The Title and Type fields are also extracted for each name.
 
 #### Events
-Events can contain a description under, well, the Description field. (I'd like to allow them to have a Description attribute for more extended descriptions). Their location can be provided under the Place field; only the Name of the place is used.
+Events can contain a description under, well, the Description field. (If needed, I could allow them to have a Description attribute for more extended descriptions). Their location can be provided under the Place field; only the Name of the place is used.
 
 #### Families
-In the case of families, a citation/source is intended to provide evidence for the membership of the family (in the case of a marriage relationship, it can also be evidence for the marriage taking place). I haven't decided how to provide more granular sourcing, e.g. we might have one source to prove that a couple got married, and another source to prove that some of the children were part of the family, and another source for other children.
+In the case of families, a citation/source is intended to provide evidence for the membership of the family (in the case of a marriage relationship, it can also be evidence for the marriage taking place). I haven't decided how to provide more granular sourcing, e.g. we might use one source to prove that a couple got married, and another source to prove that some of the family's children, and another source for the rest of the family.
 
 Families can have Description attributes just like People can.
 
