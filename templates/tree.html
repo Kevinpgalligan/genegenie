@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %} Tree Browser {% endblock title %}
+{% block content %}
+<div id="FamilyChart"
+     class="f3"
+     style="width:100%;height:900px;margin:auto;background-color:rgb(33,33,33);color:#fff;">
+</div>
+
+<script type="module">
+import * as f3 from 'family-chart';
+import 'family-chart/dist/styles/family-chart.css';
+
+const data = [
+{% for p in people %}
+  { "id": "{{p.gramps_id}}",
+    "data": {"name": "{{p.display_name}}",
+             "gender": "{{'M' if p.gender == Gender.MALE else 'F'}}",
+             "birth": "{{format_event_date(p.birth)}}",
+             "death": "{{format_event_date(p.death)}}"},
+    "rels": {
+        "spouses": [
+            {% for fam in p.families_as_partner %}
+            {% if fam.parent1_id and fam.parent1_id != p.gramps_id %}
+            "{{ fam.parent1_id }}",
+            {% elif fam.parent2_id and fam.parent2_id != p.gramps_id %}
+            "{{ fam.parent2_id }}",
+            {% endif %}
+            {% endfor %}
+        ],
+        "children": [
+            {% for fam in p.families_as_partner %}
+            {% for child_id, rel in fam.children %}
+            {% if rel == 'Birth' %}
+            "{{ child_id }}",
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+        ]
+    }
+  },
+{% endfor %}
+];
+
+const f3Chart = f3.createChart('#FamilyChart', data);
+
+f3Chart
+  .setCardHtml()
+  .setCardDisplay([["name"],
+                   ["birth"]]);
+
+f3Chart.updateTree({initial: true});
+</script>
+{% endblock content %}

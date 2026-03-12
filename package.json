@@ -1,0 +1,16 @@
+{
+  "name": "genegenie",
+  "version": "1.0.0",
+  "description": "A website generator for Gramps family trees.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kevinpgalligan/genegenie.git"
+  },
+  "keywords": [],
+  "author": "Kevin Galligan",
+  "license": "MIT",
+  "dependencies": {
+    "family-chart": "^0.9.0"
+  }
+}

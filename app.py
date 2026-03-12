@@ -753,7 +753,8 @@ app.jinja_env.globals.update(
     get_cite_class=get_cite_class,
     get_existence_cites=get_existence_cites,
     get_person=get_person,
-    EventType=EventType)
+    EventType=EventType,
+    Gender=Gender)
 
 freezer = Freezer(app)
 
@@ -857,6 +858,11 @@ def citestats_page():
         fam_stats=fam_stats,
         marriage_stats=marriage_stats,
         note_stats=note_stats)
+
+@app.route("/tree.html")
+def tree_page():
+    global people
+    return render_template("tree.html", people=people)
 
 # Need to help Frozen-Flask to find the parameterised page names.
 @freezer.register_generator
