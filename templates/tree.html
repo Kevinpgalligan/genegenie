@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %} Tree Browser {% endblock title %}
+{% block extrahead %} <link rel="stylesheet" href="/static/css/family-chart.css">
+<script type="module" src="/static/js/bundle.js"></script>{% endblock extrahead %}
 {% block content %}
 <div id="FamilyChart"
      class="f3"
@@ -7,9 +9,6 @@
 </div>
 
 <script type="module">
-import * as f3 from 'family-chart';
-import 'family-chart/dist/styles/family-chart.css';
-
 const data = [
 {% for p in people %}
   { "id": "{{p.gramps_id}}",
@@ -20,34 +19,26 @@ const data = [
     "rels": {
         "spouses": [
             {% for fam in p.families_as_partner %}
-            {% if fam.parent1_id and fam.parent1_id != p.gramps_id %}
-            "{{ fam.parent1_id }}",
-            {% elif fam.parent2_id and fam.parent2_id != p.gramps_id %}
-            "{{ fam.parent2_id }}",
-            {% endif %}
+            {% if fam.parent1_id and fam.parent1_id != p.gramps_id %}"{{ fam.parent1_id }}",
+            {% elif fam.parent2_id and fam.parent2_id != p.gramps_id %}"{{ fam.parent2_id }}",{% endif %}
             {% endfor %}
         ],
         "children": [
-            {% for fam in p.families_as_partner %}
-            {% for child_id, rel in fam.children %}
-            {% if rel == 'Birth' %}
-            "{{ child_id }}",
-            {% endif %}
-            {% endfor %}
-            {% endfor %}
+            {% for fam in p.families_as_partner %} {% for child_id, rel in fam.children %}
+            {% if rel == 'Birth' %}"{{ child_id }}",{% endif %}{% endfor %}{% endfor %}
+        ],
+        "parents": [
+            {% for fam in p.families_as_child %} {% for child_id, rel in fam.children %}
+            {% if rel == 'Birth' and child_id == p.gramps_id %}
+            {% if fam.parent1_id %}"{{ fam.parent1_id }}",{% endif %}
+            {% if fam.parent2_id %}"{{ fam.parent2_id }}",{% endif %}
+            {% endif %}{% endfor %}{% endfor %}
         ]
     }
   },
 {% endfor %}
 ];
 
-const f3Chart = f3.createChart('#FamilyChart', data);
-
-f3Chart
-  .setCardHtml()
-  .setCardDisplay([["name"],
-                   ["birth"]]);
-
-f3Chart.updateTree({initial: true});
+tree.main(data);
 </script>
 {% endblock content %}
