@@ -31,7 +31,7 @@ Or generate all the website files and dump them to a `build` directory:
 python3 app.py ~/.gramps/grampsdb/<your-tree-id>/ --freeze
 ```
 
-For the tree visualisation, the family-chart npm package is used. It should just work, but for future reference here's how I set it up:
+For the tree visualisation, the family-chart npm package is used. It should just work, but for future reference (and to update the tree configuration code) here's how I set it up:
 
 * Install dependencies: `npm install`.
 * Manually copy family-chart CSS: `cp node_modules/family-chart/dist/styles/family-chart.css static/css/`.

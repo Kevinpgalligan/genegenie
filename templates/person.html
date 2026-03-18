@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %} {{ person.display_name }} {% endblock title %}
 {% block content %}
-<h1>{{ person.display_name }}</h1>
+<h1 style="display: inline-block;">{{ person.display_name }}</h1>
+&nbsp;&nbsp;<a style="display: inline-block; font-size: 14px;" href="/tree.html?mainperson={{person.gramps_id}}">↪ view in tree</a>
+
 <h3>Biographical Information</h3>
 <table class="bordered-centered-table text-centered"><tr><th>Gender</th><td>{{ format_gender(person.gender) }}</td></tr>
 <tr><th>Sources for existence</th><td>{{ format_cite("", get_existence_cites(person), page_cites)|safe }}</td></tr>
@@ -57,7 +59,7 @@
 <p class="indent">(not known)</p>
 {% endif %}
 
-<p><i>Involved in following romantic relationships:</i></p>
+<p><i>Involved in the following romantic relationships:</i></p>
 {% if person.families_as_partner %}
 {% for fam in person.families_as_partner %}
 <p>

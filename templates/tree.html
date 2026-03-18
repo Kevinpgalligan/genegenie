@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 {% block title %} Tree Browser {% endblock title %}
 {% block extrahead %} <link rel="stylesheet" href="/static/css/family-chart.css">
+<link rel="stylesheet" href="/static/css/tree.css">
 <script type="module" src="/static/js/bundle.js"></script>{% endblock extrahead %}
 {% block content %}
+<div id="tree-container">
+<div id="zoom-button-box">
+<button class="zoom-button" onclick="tree.zoom(3/2)">+</button>
+<button class="zoom-button" onclick="tree.zoom(2/3)">-</button>
+</div>
 <div id="FamilyChart"
      class="f3"
-     style="width:100%;height:900px;margin:auto;background-color:rgb(33,33,33);color:#fff;">
+     style="position: absolute; width: 100%; height: 900px; margin: auto; background-color: rgb(33,33,33); color: #fff">
+</div>
 </div>
 
 <script type="module">
@@ -39,6 +46,9 @@ const data = [
 {% endfor %}
 ];
 
-tree.main(data);
+const url_params = new URLSearchParams(window.location.search);
+const person_id = url_params.get('mainperson');
+
+tree.main(data, person_id);
 </script>
 {% endblock content %}

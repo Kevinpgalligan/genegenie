@@ -4,8 +4,9 @@ import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Tuple, List, Set
+import os.path
 
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 from flask_frozen import Freezer
 # We reuse some types from the Gramps lib, like
 # EventType and Date, but we create our own versions
@@ -863,6 +864,13 @@ def citestats_page():
 def tree_page():
     global people
     return render_template("tree.html", people=people)
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, "static"),
+        "favicon.ico",
+        mimetype="image")
 
 # Need to help Frozen-Flask to find the parameterised page names.
 @freezer.register_generator
