@@ -22,7 +22,7 @@ const data = [
     "data": {"name": "{{p.display_name}}",
              "gender": "{{'M' if p.gender == Gender.MALE else 'F'}}",
              "birth": "{{format_event_date(p.birth)}}",
-             "death": "{{format_event_date(p.death)}}"},
+             "death": "{{format_event_date(p.death, default='-')}}"},
     "rels": {
         "spouses": [
             {% for fam in p.families_as_partner %}
