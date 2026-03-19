@@ -712,8 +712,6 @@ def propagate_generations(person: PersonInfo, gen: int, visited: Optional[Set[st
                 if rel_type == "Birth":
                     propagate_generations(people_map[child_id], gen+1, visited)
 
-
-
 def is_birth_family(person: PersonInfo, family: Family) -> bool:
     return get_child_relationship(person, family) == "Birth"
 
@@ -722,8 +720,9 @@ def get_existence_cites(person: PersonInfo) -> List[Cite]:
     seen = set()
     def add_cites(cs):
         for c in cs:
-            if c.gramps_id not in seen:
-                seen.add(c.gramps_id)
+            key = (c.source.gramps_id, c.description)
+            if key not in seen:
+                seen.add(key)
                 result.append(c)
     add_cites(person.bio_cites)
     for ev in person.events:
