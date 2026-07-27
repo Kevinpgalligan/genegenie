@@ -30,7 +30,7 @@
 {% if person.families_as_child %}
 {% for fam in person.families_as_child %}
 <p><table class="indent bordered-centered-table text-centered">
-<tr><th colspan='6'><a href='/family/{{ fam.gramps_id }}.html'>{{ fam.gramps_id }}</a></th></tr>
+<tr><th colspan='6'><a href="/family/{{ fam.gramps_id }}.html">{{ fam.gramps_id }}</a></th></tr>
 <tr><th rowspan='2'>Parents</th>
 {% if fam.parent1_id %}{{ format_person_row(fam.parent1_id)|safe }}<td class='emptycell'></td>{% else %}<td colspan='5'>?</td>{% endif %}</tr>
 {% if fam.parent2_id %}{{ format_person_row(fam.parent2_id)|safe }}<td class='emptycell'></td>{% else %}<td colspan='5'>?</td>{% endif %}</tr>
@@ -64,7 +64,7 @@
 {% for fam in person.families_as_partner %}
 <p>
 <table class="indent bordered-centered-table text-centered">
-<tr><th colspan='6'><a href='/family/{{ fam.gramps_id }}.html'>{{ fam.gramps_id }}</a></th></tr>
+<tr><th colspan='6'><a href="/family/{{ fam.gramps_id }}.html">{{ fam.gramps_id }}</a></th></tr>
 <tr><th>Partner</th>
 {% if fam.parent1_id and fam.parent2_id %}
 {{ format_person_row(fam.parent1_id if fam.parent1_id != person.gramps_id else fam.parent2_id)|safe }}

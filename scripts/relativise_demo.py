@@ -16,7 +16,8 @@ ORIGINAL = 'href="/'
 NEW = 'href="/genegenie/'
 
 def main():
-    html_files = list(Path(sys.argv[1]).rglob("*.html"))
+    html_files = list(Path(sys.argv[1]).rglob("**/*.html"))
+    print("Found", len(html_files), "HTML files")
     for name in html_files:
         with open(name, "r") as f:
             s = f.read()

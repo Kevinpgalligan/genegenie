@@ -284,7 +284,7 @@ def format_person_row(person_id: str, date_markers=True) -> str:
     global people_map
     person = people_map[person_id]
     cells = []
-    cells.append(f"<td><a href='/person/{person.gramps_id}.html'>{person.display_name}</a></td>")
+    cells.append(f"<td><a href=\"/person/{person.gramps_id}.html\">{person.display_name}</a></td>")
     cells.append(f"<td>{format_gender(person.gender)}</td>")
     cells.append(f"<td>{'b. ' if date_markers else ''}{format_event_date(person.birth)}</td>")
     cells.append(f"<td>{'d. ' if date_markers else ''}{format_event_date(person.death, default='-')}</td>")
@@ -309,7 +309,7 @@ def format_cite(s: str, cites: List[Cite], page_cites: PageCites) -> str:
             src = cite.source
             label = page_cites.get_cite_label(cite)
             if label not in already_added:
-                parts.append(f"<a class='citelink' href='#cite{label}'>")
+                parts.append(f"<a class='citelink' href=\"#cite{label}\">")
                 parts.append(f"<sup class='{get_cite_class(src)}'>")
                 parts.append(f"[{label}]")
                 parts.append("</sup>")
@@ -372,7 +372,7 @@ def format_names_index() -> str:
 <tr><th>Name</th><th>Title</th><th>Type</th></tr>"""]
     for person_id, name in names:
         parts.extend([
-            f"<tr><td><a href='/person/{person_id}.html'>",
+            f"<tr><td><a href=\"/person/{person_id}.html\">",
             f"{name.first} {name.surname}</a></td>",
             f"<td>{name.title}</td>",
             f"<td>{name.name_type}</td></tr>"
@@ -388,7 +388,7 @@ def format_cite_section(page_cites: PageCites) -> str:
         parts.append(f"<span class='{get_cite_class(src)}'>[{src_number}]</span> ")
         parts.append(src.title)
 
-        parts.append(f" <a href='/source/{src.gramps_id}.html'>(source page)</a>")
+        parts.append(f" <a href=\"/source/{src.gramps_id}.html\">(source page)</a>")
         parts.append("</span>")
         for cite, letter in page_cites.get_cite_letter_pairs(src):
             parts.append(f"<br><span class='indent person-citation' id='cite{page_cites.get_cite_label(cite)}'>↳ ({letter}) <i>{cite.description}</i></span>")
