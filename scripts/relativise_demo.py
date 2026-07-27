@@ -15,15 +15,18 @@ from pathlib import Path
 ORIGINAL = 'href="/'
 NEW = 'href="/genegenie/'
 
+SRC_ORIG = 'src="/'
+SRC_NEW = 'src="/genegenie/'
+
 def main():
     html_files = list(Path(sys.argv[1]).rglob("**/*.html"))
     print("Found", len(html_files), "HTML files")
     for name in html_files:
         with open(name, "r") as f:
             s = f.read()
-        if ORIGINAL in s:
+        if ORIGINAL in s or SRC_ORIG in s:
             with open(name, "w") as f:
-                f.write(s.replace(ORIGINAL, NEW))
+                f.write(s.replace(ORIGINAL, NEW).replace(SRC_ORIG, SRC_NEW))
 
 if __name__ == "__main__":
     main()
