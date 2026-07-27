@@ -26,8 +26,8 @@
 
 <div id="tree-container">
 <div id="zoom-button-box">
-<button class="zoom-button" onclick="window.tree.zoom(3/2)">+</button>
-<button class="zoom-button" onclick="window.tree.zoom(2/3)">-</button>
+<button class="zoom-button" onclick="tree.zoom(3/2)">+</button>
+<button class="zoom-button" onclick="tree.zoom(2/3)">-</button>
 </div>
 <div id="FamilyChart"
      class="f3"
@@ -6307,7 +6307,7 @@ const data = [
 const url_params = new URLSearchParams(window.location.search);
 const person_id = url_params.get('mainperson');
 
-window.tree.main(data, person_id);
+tree.main(data, person_id);
 </script>
 
 </body>
