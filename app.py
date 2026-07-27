@@ -3,8 +3,9 @@ from pathlib import Path
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Tuple, List, Set
+from typing import Optional, Tuple, List, Set, Dict
 import os.path
+import random
 
 from flask import Flask, render_template, send_from_directory
 from flask_frozen import Freezer
@@ -15,8 +16,119 @@ from gramps.gen.dbstate import DbState
 from gramps.gen.lib import Person, EventType, AttributeType
 from gramps.gen.db.utils import make_database
 from gramps.gen.lib.date import Date
+import lorem
 
 CITE_LETTERS = "abcdefghijklmnopqrstuvwxyz"
+
+MALE_NAMES = """Abel Abner Abraham Abram Adam Adan Addison
+Aden Agustin Aiden Alberto Alejandro Alek Alex Alexandre Alexandro
+Alexis Alfonso Ali Alonzo Alton Alvaro Aman Amari Ameer Ammon Amos
+Andre Andreas Andres Andy Ari Aric Ariel Arman Armando Asher Ashton
+Bailey Bilal Blair Bowen Braden Braiden Brandan Branden Braxton Braydon Brendan
+Brennan Brennen Brennon Brent Broderick Bryan Bryon Bryson Cade Caelan Cale
+Camryn Carson Carter Casey Cayden Cesar Charlie Chase Chaz Chris Christion
+Claudio Clifton Clinton Codey Cole Colin Collin Colt Colton Conor Cory
+Coy Craig Cristobal Cristofer Dakoda Dallin Dameon Dan Dane Daniel Danny
+Darin Darion Darius Daron Darrion Darwin Dashaun Davion Davon Dawson Daylon
+Deante Deion Demarco Demetrius Derrick Deshaun Deshawn Destin Devante Devon Devonte
+Devyn Dillon Dion Dionte Dominic Dominik Dominique Donald Dontae Dorian Drake
+Dustyn Dwight Dylon Earl Easton Edmund Edward Edwin Efrain Eli Elian
+Eliseo Elisha Elliot Ellis Elvin Elvis Emiliano Emmanuel Enoch Enrique Erich
+Erick Estevan Ethen Ezekiel Fidel Finn Fletcher Francis Francisco Frankie Fredy
+Gabriel Gage Galen Gary Gavin German Gideon Gino Giovanny Glen Gordon
+Grady Grayson Greyson Haden Hans Hayden Heath Hector Hernan Houston Howard
+Hudson Hugh Immanuel Isai Jabari Jacoby Jacques Jaden Jadon Jaiden Jairo
+Jake Jaleel Jalin Jamaal Jamarcus Jamari Jameson Jamie Jamir Jamison Jaquan
+Jarod Jaron Jarret Jarrett Jarrod Jase Jayce Jaydon Jayvon Jean Jedidiah
+Jeff Jeremiah Jeremy Jerimiah Jermaine Jerrod Jett Jim Jimmie Jimmy Joaquin
+Johan John Johnathon Johnny Johnpaul Jonas Jonathan Jonathon Jordan Jorden Jordi
+Josiah Jovan Jovanni Jovany Juancarlos Julio Justus Justyn Kade Kadin Kalvin
+Kavon Kayden Keandre Keanu Keenan Keith Kellen Kelly Kenan Kent Kenyon
+Keyon Khalid Kian Killian Kirk Kobie Kolten Kristian Kristofer Kristopher Kurt
+Kurtis Kyree Lamar Lamont Lance Lawson Leland Leonardo Leslie Levi Lionel
+Lonnie Loren Louis Luca Luke Manuel Marcanthony Marcos Mark Markel Markus
+Marlon Marquis Martin Mathew Maurice Mauro Maximilian Mckinley Mikel Mitchell Mohammad
+Moises Montana Morgan Moses Muhammad Nash Nathan Nathanial Nathaniel Neal Neil
+Nicholas Nick Nicolas Nikhil Nikolas Notnamed Obed Omar Omari Osvaldo Oswaldo
+Paxton Payne Payton Pedro Peter Philip Pranav Presley Prince Quentin Quinn
+Rahul Ralph Ramiro Ramon Rashad Raven Raymond Raymundo Reagan Reed Reid
+Remington Reynaldo Rhett Rigoberto Riley Roberto Roderick Ronaldo Rudy Ryland Sage
+Santana Santino Santos Saul Seamus Shamar Shannon Shawn Sheldon Shelton Shlomo
+Simeon Spencer Stefan Stephan Sterling Stewart Stone Tanner Tavion Tayler Terence
+Terrell Theron Timothy Travis Travon Trent Trevion Trevor Trey Tristian Troy
+Truman Trystan Ty Tye Tylor Tyrese Tyrique Ulises Ulysses Valentin Vaughn
+Wade Waylon Will William Willie Wilson Yehuda Yosef Zachariah Zack Zackary
+Zakary Zane Zavier Zayne""".replace("\n", " ").split(" ")
+
+FEMALE_NAMES = """Abagail Abby Abrianna Adela Adeline Adilene Adriana Ainsley Akira Alana
+Alanis Aleah Alecia Aleena Alejandra Alessandra Alexa Alexandra Alexandrea Alexandria Alexys
+Ali Alicia Alina Alison Aliyah Allison Allyson Allyssa Alondra Alyssa Alyssia Amalia
+Amari Amber Ambria Amelia Amie Amirah Anahi Analise Ananda Anastasia Andie
+Angel Angelina Angie Anisha Anita Annalee Annamarie Annette Annmarie Aracely Arlene
+Aryana Asha Ashanti Ashley Ashlin Asya Athena Audra Aurora Aya Aysha
+Bailee Baylee Baylie Bella Bethany Beyonce Bianca Blanca Brea Breana Breann
+Breanne Brenda Brenna Bria Brianna Bridget Bridgett Brigid Briley Brisa Brittany
+Brookelyn Brooklyn Bryanna Bryce Caitlin Camila Camilla Camille Candace Cara Carina
+Carlie Carly Carolina Carrie Casey Catrina Caylin Chana Charlize Chasity Cheyenne
+Chiara Chloe Christianna Christy Ciarra Cielo Citlali Claire Clara Colette Constance
+Cora Cori Corinne Cortney Courtney Cristina Crystal Cynthia Dahlia Dakota Damaris
+Danae Danika Darcy Dasia Dayana Dejah Demi Denise Destinee Destini Devan
+Dominique Dulce Edith Elaina Elaine Eleni Elisa Elisha Elizabeth Elyse Emerson
+Emilia Emily Esperanza Estefani Fabiola Fernanda Franchesca Giana Giavanna Ginger Giovanna
+Gissel Gretchen Hailee Hanah Hannah Harley Harper Hattie Hazel Heather Helena
+Holland Imani Iris Isabelle Ivy Jacie Jacinda Jaela Jaiden Jaidyn Jalen
+Jalisa Jamie Jamila Jamya Janell Janna Jasmine Jasmyne Jaylene Jaylin Jazlyn
+Jazmin Jazmine Jean Jeanette Jena Jessika Jill Joan Johana Jolie Joselyn
+Julian Juliana Julie Juliette Julisa Julissa Kaitlyn Kalli Kameron Kamryn Kari
+Karissa Karla Karly Karolina Karsyn Kassie Katelynn Katheryn Katie Kayle Kayli
+Kaylynn Kaytlyn Keana Keanna Kelley Kellie Kelsey Kelsi Kendall Kendyl Kenna
+Kennedi Kennedy Kenzie Keri Kerri Kiersten Kimberlee Kimberly Kinley Kinsley Kirstin
+Kristen Kristi Kya Kylee Kyndall Laci Lacie Laila Lainey Laisha Lanie
+Leandra Leia Leilani Lena Lila Liliana Lilianna Lily Lina Lizeth Lizette
+Lora Lucero Luisa Luna Lydia Lynette Lynn Mackenzi Maddie Madeleine Madelin
+Madelynn Madyson Mae Magdalena Mahogany Maira Maiya Makenzi Makiya Malaysia Mallorie
+Malorie Mara Marcela Marcella Margo Marguerite Maribel Marie Mariela Marisa Marisela
+Marisol Marlen Marlena Mckinley Meghan Melia Melody Mercy Micaela Micah Moira
+Monique Montana Morgan Moriah Myia Mykayla Myranda Natalya Nathalia Nathalie Nayeli
+Nikole Nina Noemi Nyah Octavia Olivia Oriana Pamela Patricia Payton Penelope
+Princess Priscilla Rachael Racheal Rachelle Rayne Rayven Reanna Rebekah Reese Reina
+Renae Rhiannon Riley Riya Rocio Rosa Rosario Ruth Ryleigh Salma Sandy
+Sanjana Santana Sarina Savana Savanah Savanna Savannah Selah Selena Serenity Shakayla
+Shanna Shantel Sharon Shayla Shea Shelbi Shiann Shyann Siena Simran Sonia
+Sophia Stacy Starr Stephanie Stephany Susana Susanna Tabatha Tabitha Talia Tania
+Tasha Tatum Taya Taylar Tayler Terri Tia Trinity Trista Tristan Tyana
+Tyla Valeria Vanesa Vera Viridiana Ximena Xiomara Yahaira Yesenia
+Yulissa Yvette Zaira""".replace("\n", " ").split(" ")
+
+SURNAMES = """Mattox Hargrove Nesbitt Holley Griffiths Maxey Herman Wade Carney Leigh McGill
+Lanning Centeno Beasley Sorensen Pelletier Whelan Slack Harmon Vieira McLeod Greiner
+Chapman Hannon Kirkland Mullin Mathew Jordan Hu Thorpe Horne Hedrick Jennings
+Capps Corrales Tang Rodriguez See Sweat Coons McQueen Sibley Roy Kuykendall
+Gallagher Ruiz Montalvo Whitt Graff Fritz Morrow Marino Dudley Wong Amador
+Akers Goble King Deal Reno Beaver Hartmann Valles Packer Arrington Mcvey
+Morey Walls Crouch Stowe Hood Laird Anglin Cordova Sanborn Light Chau
+Kelley Fahey McClung Erickson Ko Connor Camacho Sewell Rosenbaum Sellers Cavazos
+Cruz Bauman Zeller Mota Dugger Dubose Pepper Watters Renteria Patel Engel
+Vang Quick Lackey Cranford Minter Kramer Lund Bush Kyle Bourque Trinh
+Chavez Dale Massey Hobson Marshall Bergeron Pulido Mancuso Ashton Quezada Grier
+Bader Ragsdale Fox Gorman Ibrahim Ayala Woodall Chao Comer Bernal Fernandes
+Sutherland Bigelow Martz Parson Angel Mathews Ha Murphy Zhou Rowell Odell
+Harder Goode Skaggs Shafer Garay Tabor Noel Fleck Roche Roush Couture
+Mims Bergstrom Mcfarlane Key Booker Schuster Cagle Schneider Ogden Lai Calloway
+Diehl Florez Jaramillo Crockett Carbajal Hankins Fortner Borders Waldron Dutton Vest
+Bloom Medrano Mckenzie Smallwood Mahan Cameron Buchanan Gamboa Wallace Honeycutt Cody
+Mast Kelleher Todd Hanlon Nadeau Botello Austin Mosher Strauss Overton Salgado
+Derosa Manuel Barron Gaston Kenyon Morrison Lovell Ring Keeney Ritchie McHugh
+Madden Jamison Randle Malley Arndt Healey Sapp Nicholson Simons Neill Aponte
+Pence Compton Gough Razo Lively Fuentes Chester Ivey Douglas Millard Jauregui
+Pak Poore Solorio Groff Glick Sturgill Christensen Villasenor Clarkson Harbin Aiken
+Varney Granados Braxton Workman Paulsen Aguilera McDonald Elmore Marcum Knutson Sikes
+Ayers Sauceda Martens Jiang Caraballo Bales Miner Beauchamp Dunlap Wegner Moriarty
+Ouellette Storey Ventura Binder Arroyo Andre Roman Dees Dean Garber Fries Cardoza
+Woods Mclemore Doran Rutherford Estrada Helton Reece Merrick Michel Tuck Gossett
+Edgar Hedges Nielson Cooke Gillespie Sauer Richard Sherwood Huynh Ingle Bruner
+Kunkel Goebel""".replace("\n", " ").split(" ")
+random.shuffle(SURNAMES)
 
 class Gender(Enum):
     MALE = 1
@@ -463,7 +575,7 @@ def make_source(src_obj, gramps_db) -> Source:
                 found_q = True
     if not found_q:
         print(f"WARN: source {gramps_id} does not have a Quality attribute.")
-    source = Source(src_obj.title, gramps_id, description, quality)
+    source = Source(str(src_obj.title), gramps_id, str(description), quality)
 
     sources_map[gramps_id] = source
     return source
@@ -476,7 +588,7 @@ def parse_source_quality(s: str) -> SourceQuality:
     return SourceQuality.MEDIOCRE
 
 def get_note_text_from_ref(note_ref, gramps_db) -> str:
-    return gramps_db.get_note_from_handle(note_ref).text
+    return str(gramps_db.get_note_from_handle(note_ref).text)
 
 def get_families_as_partner(person, gramps_db) -> List[Family]:
     return get_families(person.get_family_handle_list(), gramps_db)
@@ -737,6 +849,87 @@ def get_existence_cites(person: PersonInfo) -> List[Cite]:
             add_cites(ev.cites)
     return result
 
+def anonymise_everything():
+    global people, sources_map, family_map, event_map
+    surname_map = {}
+    for person in people:
+        anonymise_person_data(person, surname_map)
+    for src in sources_map.values():
+        src.title = loremise(src.title)
+        src.description = loremise(src.description)
+    for fam in family_map.values():
+        anonymise_family_data(fam)
+    for event in event_map.values():
+        anonymise_event_data(event)
+
+def loremise(txt: str):
+    return lorem.get_word(count=max(2, txt.count(" ")))
+
+def anonymise_event_data(event: Event):
+    if event.date:
+        # Shift the year, month, day.
+        event.date = event.date + (random.randint(-5, 5), 0, 5 + random.randint(-170, 170))
+    if event.description:
+        event.description = loremise(event.description)
+    if event.place:
+        event.place = loremise(event.place)
+    for cite in event.cites:
+        anonymise_cite(cite)
+
+def anonymise_family_data(fam: Family):
+    for note in fam.notes:
+        anonymise_note(note)
+    for cite in fam.cites:
+        anonymise_cite(cites)
+
+def anonymise_person_data(person: PersonInfo, surname_map: Dict[str, str]):
+    # First deal with the display name.
+    name_parts = person.display_name.split(" ")
+    disp_first, disp_sur = name_parts[0], name_parts[-1]
+    first_name_options = MALE_NAMES if person.gender == Gender.MALE else FEMALE_NAMES
+    new_first_name = random.choice(first_name_options)
+    if disp_sur in surname_map:
+        new_disp_sur = surname_map[disp_sur]
+    else:
+        # Make sure that all the surnames are mapped to the same new surname.
+        new_disp_sur = SURNAMES.pop()
+        surname_map[disp_sur] = new_disp_sur
+    person.display_name = f"{new_first_name} {new_disp_sur}"
+
+    # Then the listing name. We assume it's the same, just with surname first & comma after.
+    person.listing_name = f"{new_disp_sur}, {new_first_name}"
+
+    # Then all of the other names.
+    for name in person.names:
+        if name.first == disp_first:
+            name.first = new_first_name
+        else:
+            name.first = random.choice(first_name_options)
+        if name.surname in surname_map:
+            name.surname = surname_map[name.surname]
+        else:
+            new_surname = SURNAMES.pop()
+            surname_map[name.surname] = new_surname
+            name.surname = new_surname
+        for cite in name.cites:
+            anonymise_cite(cite)
+
+    for note in person.notes:
+        anonymise_note(note)
+
+    for cite in person.bio_cites:
+        anonymise_cite(cite)
+
+
+def anonymise_note(note: Note):
+    note.content = loremise(note.content)
+    for cite in note.cites:
+        anonymise_cite(cite)
+
+def anonymise_cite(cite: Cite):
+    if cite.description:
+        cite.description = loremise(cite.description)
+
 app = Flask(__name__)
 app.jinja_env.globals.update(
     format_event_date=format_event_date,
@@ -901,6 +1094,10 @@ def main():
         "--freeze",
         action="store_true",
         help="Whether to generate all the website files and dump them to a build directory.")
+    parser.add_argument(
+        "--anonymise",
+        action="store_true",
+        help="Swaps out names and text from the Gramps data with random names and random text.")
     args = parser.parse_args()
     if args.dbpath:
         dbpath = Path(args.dbpath)
@@ -919,6 +1116,8 @@ def main():
                     [Name("Mrs.", "Zello", "Goodbye", "Married Name", [])],
                     "I002", None, None, Gender.FEMALE, [], [], [], [],
                     0, 0, 0, [])]
+    if args.anonymise:
+        anonymise_everything()
     if args.freeze:
         print("Building website, saving to build/ directory.")
         freezer.freeze()
