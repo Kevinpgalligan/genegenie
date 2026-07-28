@@ -1,2 +1,2 @@
-* Add Quilt Chart.
 * Handle media (e.g. show picture of a census form).
+* Add Quilt Chart.

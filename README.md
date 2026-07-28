@@ -5,7 +5,7 @@ A demo can be found [HERE](https://kevingal.com/genegenie/).
 
 ![the people page, a table with name, gender, birth, death etc.](https://github.com/Kevinpgalligan/genegenie/blob/master/img/people.png)
 
-See **docs/conventions.md** for a list of conventions I follow in my Gramps project, which the software makes use of.
+See **notes/conventions.md** for a list of conventions I follow in my Gramps project, which the software makes use of.
 
 ### Requirements
 * Gramps 5.1 (haven't tested with other versions).
