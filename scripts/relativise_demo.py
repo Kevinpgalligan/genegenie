@@ -19,9 +19,9 @@ SRC_ORIG = 'src="/'
 SRC_NEW = 'src="/genegenie/'
 
 def main():
-    html_files = list(Path(sys.argv[1]).rglob("**/*.html"))
-    print("Found", len(html_files), "HTML files")
-    for name in html_files:
+    files = [p for p in Path(sys.argv[1]).rglob("**/*") if p.is_file()]
+    print("Found", len(files), "files")
+    for name in files:
         with open(name, "r") as f:
             s = f.read()
         if ORIGINAL in s or SRC_ORIG in s:
